@@ -1,7 +1,6 @@
 import { JupiterTokenData, JupiterPoolData, CandleData, TimeInterval, ChartResponse } from '@/types/token';
 
 // Jupiter API endpoints
-const JUPITER_TOKEN_API = 'https://lite-api.jup.ag/tokens/v1/token';
 const JUPITER_POOLS_API = 'https://datapi.jup.ag/v1/pools';
 const JUPITER_CHARTS_API = 'https://datapi.jup.ag/v2/charts';
 
@@ -14,77 +13,14 @@ const cache = new Map<string, { data: any; timestamp: number }>();
  * Jupiter API client for token and pool data
  */
 export class JupiterClient {
-  
-  /**
-   * Fetch token metadata from Jupiter
-   */
-  static async fetchTokenMetadata(tokenAddress: string): Promise<JupiterTokenData | null> {
-    const cacheKey = `token_${tokenAddress}`;
-    
-    // Check cache first
-    const cached = cache.get(cacheKey);
-    if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-      return cached.data;
-    }
 
-    try {
-      const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
-
-      const response = await fetch(`${JUPITER_TOKEN_API}?address=${tokenAddress}`, {
-        signal: controller.signal,
-        headers: {
-          'Accept': 'application/json',
-          'User-Agent': 'BucketShop/1.0',
-        },
-      });
-
-      clearTimeout(timeoutId);
-
-      if (!response.ok) {
-        if (response.status === 404) {
-          // Token not found in Jupiter - cache null result
-          cache.set(cacheKey, { data: null, timestamp: Date.now() });
-          return null;
-        }
-        throw new Error(`Jupiter API error: ${response.status} ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      
-      // Transform Jupiter response to our interface
-      const tokenData: JupiterTokenData = {
-        symbol: data.symbol || 'UNKNOWN',
-        name: data.name || 'Unknown Token',
-        decimals: data.decimals || 6,
-        icon: data.logoURI || data.image,
-        marketCap: data.marketCap,
-        totalSupply: data.totalSupply,
-      };
-
-      // Cache the result
-      cache.set(cacheKey, { data: tokenData, timestamp: Date.now() });
-      
-      return tokenData;
-
-    } catch (error) {
-      if (error instanceof Error) {
-        if (error.name === 'AbortError') {
-          console.warn(`Jupiter token API timeout for ${tokenAddress}`);
-        } else {
-          console.warn(`Jupiter token API error for ${tokenAddress}:`, error.message);
-        }
-      }
-      return null;
-    }
-  }
 
   /**
    * Fetch pool data from Jupiter
    */
   static async fetchPoolData(tokenAddress: string): Promise<JupiterPoolData[]> {
     const cacheKey = `pools_${tokenAddress}`;
-    
+
     // Check cache first
     const cached = cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
@@ -110,7 +46,7 @@ export class JupiterClient {
       }
 
       const data = await response.json();
-      
+
       if (!data.pools || !Array.isArray(data.pools)) {
         // No pools found - cache empty array
         cache.set(cacheKey, { data: [], timestamp: Date.now() });
@@ -136,7 +72,7 @@ export class JupiterClient {
 
       // Cache the result
       cache.set(cacheKey, { data: poolsData, timestamp: Date.now() });
-      
+
       return poolsData;
 
     } catch (error) {
@@ -152,17 +88,38 @@ export class JupiterClient {
   }
 
   /**
-   * Fetch both token metadata and pool data in parallel
+   * Fetch token data from pools (pools contain token metadata)
+   * 
+   * LEARNING: Jupiter's pools API returns complete token information
+   * in the baseAsset field, so we don't need separate token metadata call
    */
   static async fetchTokenAndPools(tokenAddress: string): Promise<{
     tokenData: JupiterTokenData | null;
     poolsData: JupiterPoolData[];
   }> {
-    const [tokenData, poolsData] = await Promise.all([
-      this.fetchTokenMetadata(tokenAddress),
-      this.fetchPoolData(tokenAddress),
-    ]);
-
+    console.log(`🔍 Fetching pools for token: ${tokenAddress}`);
+    
+    // Only fetch pool data - it contains token metadata
+    const poolsData = await this.fetchPoolData(tokenAddress);
+    
+    if (poolsData.length === 0) {
+      console.log(`❌ No pools found for token: ${tokenAddress}`);
+      return { tokenData: null, poolsData: [] };
+    }
+    
+    // Extract token metadata from the first pool's baseAsset
+    const firstPool = poolsData[0];
+    const tokenData: JupiterTokenData = {
+      symbol: firstPool.baseAsset.symbol,
+      name: firstPool.baseAsset.name,
+      decimals: firstPool.baseAsset.decimals,
+      icon: firstPool.baseAsset.icon,
+      marketCap: firstPool.baseAsset.mcap,
+      totalSupply: firstPool.baseAsset.totalSupply,
+    };
+    
+    console.log(`✅ Found token: ${tokenData.symbol} with ${poolsData.length} pools`);
+    
     return { tokenData, poolsData };
   }
 
@@ -238,7 +195,7 @@ export class JupiterClient {
     type: string = 'price'
   ): Promise<CandleData[]> {
     const cacheKey = `ohlcv_${tokenAddress}_${interval}_${candles}_${Math.floor(to / 60000)}`; // Cache per minute
-    
+
     // Check cache first
     const cached = cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
@@ -247,7 +204,7 @@ export class JupiterClient {
 
     try {
       const url = `${JUPITER_CHARTS_API}/${tokenAddress}?interval=${interval}&to=${to}&candles=${candles}&type=${type}`;
-      
+
       const controller = new AbortController();
       const timeoutId = setTimeout(() => controller.abort(), REQUEST_TIMEOUT);
 
@@ -325,4 +282,5 @@ export class JupiterClient {
       return [];
     }
   }
+
 }

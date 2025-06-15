@@ -45,6 +45,17 @@ const statements = {
   checkTokenInWatchlist: db.prepare(`
     SELECT id FROM user_watchlist 
     WHERE wallet_address = ? AND token_address = ? AND is_active = 1
+  `),
+  
+  checkTokenInWatchlistAny: db.prepare(`
+    SELECT id, is_active FROM user_watchlist 
+    WHERE wallet_address = ? AND token_address = ?
+  `),
+  
+  reactivateWatchlistItem: db.prepare(`
+    UPDATE user_watchlist 
+    SET is_active = 1, user_notes = ?, date_added = unixepoch()
+    WHERE wallet_address = ? AND token_address = ?
   `)
 };
 
@@ -55,15 +66,37 @@ export class WatchlistService {
   /**
    * Add token to user's watchlist
    * 1. Ensure token exists in global registry (via TokenService)
-   * 2. Add to user's personal watchlist
+   * 2. Add to user's personal watchlist OR reactivate if soft-deleted
    */
   static async addTokenToWatchlist(input: AddTokenToWatchlistInput): Promise<UserWatchlistItem> {
-    // Check if already in user's watchlist
-    const existing = statements.checkTokenInWatchlist.get(input.walletAddress, input.tokenAddress);
-    if (existing) {
-      throw new Error('Token already exists in watchlist');
+    // Check if token exists in watchlist (regardless of is_active status)
+    const existingAny = statements.checkTokenInWatchlistAny.get(input.walletAddress, input.tokenAddress) as { id: number; is_active: number } | undefined;
+    
+    if (existingAny) {
+      if (existingAny.is_active === 1) {
+        // Token is already active in watchlist
+        throw new Error('Token already exists in watchlist');
+      } else {
+        // Token exists but is soft-deleted (is_active = 0), reactivate it
+        console.log(`Reactivating token ${input.tokenAddress} for wallet ${input.walletAddress}`);
+        
+        statements.reactivateWatchlistItem.run(
+          input.userNotes || null,
+          input.walletAddress,
+          input.tokenAddress
+        );
+        
+        // Get the reactivated watchlist item
+        const watchlistItem = await this.getWatchlistItem(existingAny.id, input.walletAddress);
+        if (!watchlistItem) {
+          throw new Error('Failed to retrieve reactivated watchlist item');
+        }
+        
+        return watchlistItem;
+      }
     }
 
+    // Token doesn't exist in watchlist at all, create new entry
     // Ensure token exists in global registry (TokenService handles Jupiter API fetching)
     await TokenService.getOrFetchToken(input.tokenAddress);
 

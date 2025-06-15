@@ -215,9 +215,77 @@ export class TokenService {
   }
 
   /**
-   * Search tokens by symbol or name
+   * Search tokens by address - SIMPLIFIED APPROACH
+   * 
+   * LEARNING: Simplified token discovery strategy:
+   * 1. User provides token address (exact, no ambiguity)
+   * 2. Check local database first (fast!)
+   * 3. If not found, fetch from Jupiter using fetchPoolData
+   * 4. Save token + pool data to database
+   * 5. Return token with pool information
+   * 
+   * Benefits:
+   * - No search ambiguity (exact address)
+   * - Rich pool data for real-time features
+   * - Automatic caching of tokens and pools
+   * - Foundation for live price feeds
    */
-  static async searchTokens(query: string, limit: number = 20): Promise<TokenSearchResult[]> {
+  static async searchTokenByAddress(tokenAddress: string): Promise<TokenSearchResult | null> {
+    console.log(`🔍 Looking up token: ${tokenAddress}`);
+    
+    // Validate token address format
+    if (!tokenAddress || tokenAddress.length < 32) {
+      console.log(`❌ Invalid token address format`);
+      return null;
+    }
+    
+    // STEP 1: Check local database first
+    const existingToken = await this.getToken(tokenAddress);
+    
+    if (existingToken) {
+      console.log(`📊 Found token in local database: ${existingToken.symbol}`);
+      return {
+        tokenAddress: existingToken.tokenAddress,
+        symbol: existingToken.symbol,
+        name: existingToken.name,
+        iconUrl: existingToken.iconUrl,
+      };
+    }
+    
+    // STEP 2: Fetch from Jupiter API using fetchPoolData
+    try {
+      console.log(`🌐 Fetching token data from Jupiter API...`);
+      const { tokenData, poolsData } = await JupiterClient.fetchTokenAndPools(tokenAddress);
+      
+      if (!tokenData) {
+        console.log(`❌ Token not found in Jupiter API`);
+        return null;
+      }
+      
+      console.log(`📡 Found token: ${tokenData.symbol} with ${poolsData.length} pools`);
+      
+      // STEP 3: Save token and pool data to database
+      const savedToken = await this.storeTokenData(tokenAddress, tokenData, poolsData);
+      
+      console.log(`💾 Saved token to database: ${savedToken.symbol}`);
+      
+      return {
+        tokenAddress: savedToken.tokenAddress,
+        symbol: savedToken.symbol,
+        name: savedToken.name,
+        iconUrl: savedToken.iconUrl,
+      };
+      
+    } catch (error) {
+      console.error(`Jupiter API lookup failed for ${tokenAddress}:`, error);
+      return null;
+    }
+  }
+  
+  /**
+   * Search tokens in local database (for autocomplete/suggestions)
+   */
+  static async searchLocalTokens(query: string, limit: number = 10): Promise<TokenSearchResult[]> {
     const searchPattern = `%${query}%`;
     const entities = statements.searchTokens.all(searchPattern, searchPattern, limit) as TokenEntity[];
     
@@ -226,9 +294,9 @@ export class TokenService {
       symbol: entity.symbol,
       name: entity.name,
       iconUrl: entity.icon_url || undefined,
-      // currentPrice and isInWatchlist will be set by calling service
     }));
   }
+  
 
   /**
    * Fetch token data from Jupiter API

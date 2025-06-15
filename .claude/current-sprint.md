@@ -1,74 +1,120 @@
-# Current Sprint: Watchlist Module
+# Current Sprint: Unit Testing Foundation
 
-**Status**: Backend & API Integration Complete - Moving to Frontend
-**Current Story**: Build MVP watchlist with token search, price tracking, and RSI calculation
+**Status**: 🧪 TESTING SPRINT - Building Comprehensive Test Coverage
+**Current Story**: Implement unit testing framework and write tests for critical functionality
+**Active Branch**: `feature/service-layer-tests`
 
-## Task Breakdown & Status:
-- [x] Task 1: Database Schema & Models (Backend Developer) **COMPLETE**
-  - ✅ Three-table architecture: tokens, token_pools, user_watchlist
-  - ✅ TokenService for global token registry
-  - ✅ WatchlistService for user preferences
-  - ✅ Clean type separation (token.ts, watchlist.ts)
-- [x] Task 2: Jupiter API Integration (API Developer) **COMPLETE**
-  - ✅ Token metadata fetching with smart caching
-  - ✅ Pool discovery and data parsing
-  - ✅ OHLC chart data integration
-  - ✅ RSI calculation with your provided function
-  - ✅ Bulk market data operations for watchlist
-- [ ] Task 3: Basic React Components (Frontend Developer) **← NEXT**
-  - Token search component
-  - Watchlist display component with live prices & RSI
-- [ ] Task 4: Layout Structure (Frontend Developer)
-  - 75% left sidebar for watchlist
-  - 25% right panel for trading interface
-- [ ] Task 5: Real-time Updates (Full-stack Developer)
-  - WebSocket/polling for live price updates
-  - Background RSI recalculation
-- [ ] Task 6: Helius WebSocket Integration (Advanced)
-  - Pool account data parsing for custom price engine
+## Testing Strategy & Task Breakdown:
+- [x] Task 1: Testing Framework Setup (Test Engineer) **COMPLETED**
+  - **Branch**: `feature/unit-testing-setup` ✅
+  - ✅ Setup Jest + React Testing Library + TypeScript configuration
+  - ✅ Configure test environment with Next.js App Router support
+  - ✅ Setup database mocking and API mocking strategies
+  - ✅ Create test utilities and helper functions
+  - ✅ 17 verification tests passing
+  - ✅ Test scripts: test, test:watch, test:coverage, test:ci
+- [ ] Task 2: Service Layer Tests (Backend Test Specialist) **← CURRENT**
+  - **Branch**: `feature/service-layer-tests`
+  - WatchlistService: add, remove, get, update operations
+  - TokenService: search, token fetching, pool operations
+  - Database integration tests with SQLite in-memory
+  - Error handling and edge case coverage
+- [ ] Task 3: API Route Tests (Full-stack Test Specialist)
+  - **Branch**: `feature/api-route-tests`
+  - /api/watchlist endpoints (GET, POST, DELETE, PATCH)
+  - /api/tokens search and market data endpoints
+  - Request validation and error response testing
+  - Integration with service layer verification
+- [ ] Task 4: Component Unit Tests (Frontend Test Specialist)
+  - **Branch**: `feature/component-tests`
+  - TokenSearch: search logic, dropdown behavior, navigation
+  - TokenDetails: add/remove buttons, state management
+  - WatchlistView: list rendering, click navigation
+  - Critical user interaction flows
+- [ ] Task 5: RTK Query Integration Tests (State Management Specialist)
+  - **Branch**: `feature/rtk-query-tests`
+  - Mutation hooks: add/remove watchlist operations
+  - Query hooks: data fetching and cache behavior
+  - Error handling and loading states
+  - Manual refetch functionality verification
+- [ ] Task 6: End-to-End Critical Path Tests (QA Specialist)
+  - **Branch**: `feature/integration-tests`
+  - Complete add token to watchlist flow
+  - Complete remove token from watchlist flow
+  - Search → View Details → Add/Remove workflow
+  - Error scenarios and edge cases
 
-## Development Approach
-**Collaboration Model**: Manager-Developer with specialized agents
-- **User**: Experienced frontend developer learning full-stack
-- **Claude**: Project Manager + Specialist Developers
-- **Learning Focus**: Database design ✅, crypto APIs, real-time data
+## Testing Priorities (High to Low):
+1. **Critical Business Logic** - WatchlistService, TokenService core methods
+2. **API Endpoints** - All /api routes with proper request/response validation
+3. **User Interactions** - Add/remove buttons, search, navigation
+4. **Data Flow** - RTK Query mutations and state updates
+5. **Error Handling** - API failures, database errors, validation failures
+6. **Edge Cases** - Duplicate adds, removing non-existent items, invalid tokens
 
-## Next Session Instructions
-**Role to assume**: Frontend Developer
-**Task**: Build React components for token search and watchlist display
-**Learning goal**: Show user how backend services integrate with React components
+## Testing Tools & Framework:
+**Primary Stack**:
+- **Jest**: Test runner and assertion library
+- **React Testing Library**: Component testing with user-centric approach
+- **@testing-library/jest-dom**: Custom Jest matchers for DOM testing
+- **MSW (Mock Service Worker)**: API mocking for integration tests
+- **@types/jest**: TypeScript support for Jest
 
-## Completed Architecture
-**Database Layer**: 
-- Global token registry with shared caching
-- User watchlist with token relationships
-- Pool references for price calculation
+**Database Testing**:
+- **SQLite in-memory**: Fast, isolated database tests
+- **Jest setup/teardown**: Clean test environment for each test
 
-**Service Layer**:
-- `TokenService` - Global token operations, Jupiter API, OHLC data, RSI calculations
-- `WatchlistService` - User watchlist management
-- `JupiterClient` - API integration with caching and error handling
-- `RSI Utils` - Technical analysis calculations
+**Mocking Strategy**:
+- **Jupiter API**: Mock external API calls with MSW
+- **File system**: Mock database file operations
+- **RTK Query**: Test with mocked API responses
 
-**API Integration**:
-- ✅ Jupiter token metadata and pool discovery
-- ✅ OHLC chart data for price history
-- ✅ RSI calculation system
-- ✅ Bulk market data operations
-
-## Ready for Frontend Development
-**Available Backend Methods:**
-```typescript
-// Token operations
-TokenService.getTokenWithMarketData(address) // Token + price + RSI
-TokenService.getBulkMarketData(addresses)    // Bulk watchlist data
-
-// Watchlist operations  
-WatchlistService.addTokenToWatchlist(input)
-WatchlistService.getUserWatchlist()
-
-// Price & Technical Analysis
-TokenService.getCurrentPrice(address)
-TokenService.getCurrentRSI(address)
-TokenService.getTokenOHLCVData(address)
+## Test Structure:
 ```
+src/
+├── __tests__/
+│   ├── setup/
+│   │   ├── jest.setup.ts
+│   │   ├── test-utils.tsx
+│   │   └── mocks/
+│   ├── services/
+│   │   ├── watchlist.service.test.ts
+│   │   └── token.service.test.ts
+│   ├── api/
+│   │   ├── watchlist.api.test.ts
+│   │   └── tokens.api.test.ts
+│   ├── components/
+│   │   ├── TokenSearch.test.tsx
+│   │   ├── TokenDetails.test.tsx
+│   │   └── WatchlistView.test.tsx
+│   └── integration/
+│       └── watchlist-flow.test.ts
+├── jest.config.js
+└── jest.setup.js
+```
+
+## Learning Approach:
+**For First-Time Unit Testing**:
+1. **Start Simple**: Begin with pure function tests (service methods)
+2. **Learn Patterns**: Arrange-Act-Assert pattern, mocking concepts
+3. **Build Complexity**: Move from unit → integration → component tests
+4. **Focus on Value**: Test behavior users care about, not implementation details
+
+**Testing Philosophy**:
+- **Test behavior, not implementation** - Focus on what users experience
+- **Write tests that prevent regressions** - Cover critical functionality
+- **Keep tests simple and readable** - Tests are documentation
+- **Mock external dependencies** - Jupiter API, file system, network calls
+
+## Success Criteria:
+- [x] **Testing Framework Setup** - Jest + RTL + TypeScript + mocking utilities ✅
+- [ ] **80%+ test coverage** on service layer methods
+- [ ] **All API routes tested** with request/response validation
+- [ ] **Critical user flows covered** - add/remove watchlist operations
+- [ ] **CI/CD ready** - Tests run automatically on commits
+- [ ] **Learning complete** - Understanding of testing patterns and best practices
+
+## Next Session Instructions:
+**Role to assume**: Backend Test Specialist
+**Task**: Write comprehensive tests for WatchlistService and TokenService
+**Learning goal**: Learn service layer testing, database mocking, and business logic validation

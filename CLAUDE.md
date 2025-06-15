@@ -59,13 +59,20 @@ For detailed project information, see:
 **IMPORTANT**: Before starting ANY work, new Claude instances MUST:
 
 1. **Read all memory files** (@.claude/project-context.md and @.claude/current-sprint.md)
-2. **Confirm understanding** of:
+2. **Verify git branch** and check if correct branch exists for current task
+3. **Confirm understanding** of:
    - Project vision (unified crypto trading dashboard)
    - User's role (experienced frontend dev learning full-stack)
    - Collaboration model (Manager-Developer with teaching focus)
    - Current task and learning objectives
-3. **Ask clarifying questions** if anything is unclear
-4. **Wait for user confirmation** before proceeding with implementation
+   - Required branch from current-sprint.md
+4. **Branch verification protocol**:
+   - Check current git branch with `git branch --show-current`
+   - Compare with "Active Branch" in current-sprint.md
+   - If mismatch: Ask user if they want to switch or create the correct branch
+   - If branch doesn't exist: Ask user if they want to create it
+5. **Ask clarifying questions** if anything is unclear
+6. **Wait for user confirmation** before proceeding with implementation
 
 ## Work Classification System
 
@@ -109,3 +116,89 @@ This is a **collaborative learning project**. When working on any task:
 3. **Teaching Moment**: Connect to concepts the co-dev should understand
 4. **Wait for Approval**: Get explicit "go ahead" before making any changes
 5. **No Assumptions**: Never assume permission to proceed with implementation
+
+## GitHub Workflow & Project Management
+
+### Branch Strategy
+Create feature branches for focused work that helps Claude understand context:
+
+```bash
+# Sprint-based feature branches
+git checkout -b feature/unit-testing-setup
+git checkout -b feature/service-layer-tests
+git checkout -b feature/component-tests
+git checkout -b fix/rtk-query-cache-issue
+```
+
+**Branch Naming Convention**:
+- `feature/` - New functionality or major additions
+- `fix/` - Bug fixes and corrections
+- `test/` - Adding or updating tests
+- `refactor/` - Code improvements without behavior changes
+- `docs/` - Documentation updates
+
+### Issue & Project Planning Template
+Create GitHub Issues for each sprint task using this template:
+
+```markdown
+## Issue: [Task Name]
+**Sprint**: [Current Sprint Name]
+**Priority**: High/Medium/Low
+**Type**: Feature/Bug/Test/Refactor
+
+### Acceptance Criteria:
+- [ ] Specific deliverable 1
+- [ ] Specific deliverable 2
+- [ ] Tests passing
+- [ ] Documentation updated
+
+### Technical Details:
+- **Files to modify**: List key files
+- **Dependencies**: Any external requirements
+- **Learning objectives**: What concepts to understand
+
+### Claude Code Context:
+Brief context about what this task involves for better collaboration
+```
+
+### Pull Request Template
+Create `.github/pull_request_template.md` with:
+
+```markdown
+## What Changed
+Brief description of the changes made
+
+## Sprint Task
+Link to related issue: Closes #[issue-number]
+- [ ] Task completed according to acceptance criteria
+- [ ] All tests passing
+- [ ] Code reviewed and documented
+
+## Testing
+- [ ] New tests added for new functionality
+- [ ] Existing tests still pass
+- [ ] Manual testing completed
+- [ ] No breaking changes
+
+## Claude Code Collaboration
+- **Key files changed**: List main files modified
+- **Architecture impact**: Any structural changes
+- **Learning notes**: Key concepts implemented
+
+## Deployment Notes
+- [ ] No migration required
+- [ ] Environment variables updated (if needed)
+- [ ] Ready for merge
+```
+
+### Commit Message Standards
+Follow conventional commits for better tracking:
+
+- `feat:` - New features
+- `fix:` - Bug fixes
+- `test:` - Adding/updating tests
+- `refactor:` - Code improvements
+- `docs:` - Documentation
+- `chore:` - Maintenance tasks
+
+Example: `feat: add Jest testing framework with TypeScript support`

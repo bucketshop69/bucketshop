@@ -1,133 +1,87 @@
-# Current Sprint: Unit Testing Foundation
+# Current Sprint: Real-Time Price Fetching
 
-**Status**: 🧪 TESTING SPRINT - Building Comprehensive Test Coverage
-**Current Story**: Implement unit testing framework and write tests for critical functionality
-**Active Branch**: `feature/service-layer-tests`
+**Status**: 🔄 REAL-TIME DATA SPRINT - Live Token Price Calculations via Pool Reserves
+**Current Story**: Implement real-time price fetching using Helius WebSockets and pool account changes to calculate token prices from DEX reserves
+**Active Branch**: `feature/real-time-price-fetching`
 
-## Testing Strategy & Task Breakdown:
-- [x] Task 1: Testing Framework Setup (Test Engineer) **COMPLETED**
-  - **Branch**: `feature/unit-testing-setup` ✅
-  - ✅ Setup Jest + React Testing Library + TypeScript configuration
-  - ✅ Configure test environment with Next.js App Router support
-  - ✅ Setup database mocking and API mocking strategies
-  - ✅ Create test utilities and helper functions
-  - ✅ 17 verification tests passing
-  - ✅ Test scripts: test, test:watch, test:coverage, test:ci
-- [x] Task 2: Service Layer Tests (Backend Test Specialist) **COMPLETED**
-  - **Branch**: `feature/service-layer-tests` ✅
-  - ✅ WatchlistService: comprehensive test suite for add, remove, get, update operations
-  - ✅ TokenService: complete test coverage for search, fetching, pools, market data operations
-  - ✅ Database mocking strategy implemented with Jest
-  - ✅ Jupiter API mocking and external dependency isolation
-  - ✅ Error handling and edge case coverage
-  - ✅ Async testing patterns and business logic validation
-  - ✅ Test data factories and mock utilities
-  - **Note**: Tests architecturally complete but blocked by prepared statement initialization timing
-- [ ] Task 3: API Route Tests (Full-stack Test Specialist) **← NEXT**
-  - **Branch**: `feature/api-route-tests`
-  - /api/watchlist endpoints (GET, POST, DELETE, PATCH)
-  - /api/tokens search and market data endpoints
-  - Request validation and error response testing
-  - Integration with service layer verification
-- [ ] Task 4: Component Unit Tests (Frontend Test Specialist)
-  - **Branch**: `feature/component-tests`
-  - TokenSearch: search logic, dropdown behavior, navigation
-  - TokenDetails: add/remove buttons, state management
-  - WatchlistView: list rendering, click navigation
-  - Critical user interaction flows
-- [ ] Task 5: RTK Query Integration Tests (State Management Specialist)
-  - **Branch**: `feature/rtk-query-tests`
-  - Mutation hooks: add/remove watchlist operations
-  - Query hooks: data fetching and cache behavior
-  - Error handling and loading states
-  - Manual refetch functionality verification
-- [ ] Task 6: End-to-End Critical Path Tests (QA Specialist)
-  - **Branch**: `feature/integration-tests`
-  - Complete add token to watchlist flow
-  - Complete remove token from watchlist flow
-  - Search → View Details → Add/Remove workflow
-  - Error scenarios and edge cases
+## Price Calculation Strategy & Task Breakdown:
+- [ ] Task 2: Pool Account Data Parser (DeFi Backend Specialist) **← CURRENT**
+  - **Branch**: `feature/pool-account-parser`
+  - Research and understand Raydium/Meteora pool account data structures
+  - Parse reserve data from raw account bytes
+  - Identify pool addresses for watchlist tokens
+  - Create pool data extraction utilities
+- [ ] Task 3: Price Calculation Engine (Math/DeFi Specialist)
+  - **Branch**: `feature/price-calculation-engine`
+  - Implement reserve ratio to token price algorithms
+  - USD conversion strategies (USDC pairs, SOL conversion)
+  - Price impact and slippage calculations
+  - Historical price tracking for RSI calculations
+- [ ] Task 5: Frontend Integration (Full-stack Developer)
+  - **Branch**: `feature/price-display-integration`
+  - Display live prices in watchlist components
+  - Price change indicators (+/- % with colors)
+  - Update existing UI components with real-time data
+  - Loading states and price update animations
+- [ ] Task 1: Helius WebSocket Foundation (Infrastructure Specialist)
+  - **Branch**: `feature/helius-websocket-service`
+  - WebSocket service for pool account monitoring
+  - Account change subscription management
+  - Real-time data pipeline from Helius to frontend
+  - Connection management and reconnection logic
+- [ ] Task 6: Error Handling & Fallbacks (Reliability Engineer)
+  - **Branch**: `feature/price-error-handling`
+  - WebSocket reconnection and failure recovery
+  - Fallback to HTTP polling when WebSocket fails
+  - Data validation and stale price detection
+  - Error states in UI components
 
-## Testing Priorities (High to Low):
-1. **Critical Business Logic** - WatchlistService, TokenService core methods
-2. **API Endpoints** - All /api routes with proper request/response validation
-3. **User Interactions** - Add/remove buttons, search, navigation
-4. **Data Flow** - RTK Query mutations and state updates
-5. **Error Handling** - API failures, database errors, validation failures
-6. **Edge Cases** - Duplicate adds, removing non-existent items, invalid tokens
+## DeFi Integration Priorities (High to Low):
+1. **Pool Data Parsing** - Foundation for all price calculations
+2. **Price Calculation Logic** - Core mathematical operations
+3. **User-facing Price Display** - Immediate value demonstration
+4. **Real-time Infrastructure** - WebSocket complexity layer
+5. **Production Reliability** - Error handling and fallbacks
 
-## Testing Tools & Framework:
+## Real-Time Data Tools & Framework:
 **Primary Stack**:
-- **Jest**: Test runner and assertion library
-- **React Testing Library**: Component testing with user-centric approach
-- **@testing-library/jest-dom**: Custom Jest matchers for DOM testing
-- **MSW (Mock Service Worker)**: API mocking for integration tests
-- **@types/jest**: TypeScript support for Jest
+- **Helius WebSocket API**: Account change subscriptions for pool monitoring
+- **Pool Account Parsing**: Direct bytecode interpretation for reserve data
+- **Price Calculation**: Mathematical algorithms for DEX price discovery
 
-**Database Testing**:
-- **SQLite in-memory**: Fast, isolated database tests
-- **Jest setup/teardown**: Clean test environment for each test
+**Integration Strategy**:
+- **Raydium Pools**: Primary DEX for token price discovery
+- **Meteora Pools**: Secondary pool source for price validation
+- **USDC Reference**: Base currency pair for USD price conversion
+- **SOL Conversion**: Alternative USD pricing through SOL/USDC rates
 
-**Mocking Strategy**:
-- **Jupiter API**: Mock external API calls with MSW
-- **File system**: Mock database file operations
-- **RTK Query**: Test with mocked API responses
+## Pool Architecture Understanding:
+**Raydium Pool Structure**:
+- Account data contains token A/B reserve amounts
+- Reserve ratios determine current exchange rates
+- Pool fees and slippage calculations
 
-## Test Structure:
+**Price Calculation Method**:
 ```
-src/
-├── __tests__/
-│   ├── setup/
-│   │   ├── jest.setup.ts
-│   │   ├── test-utils.tsx
-│   │   └── mocks/
-│   ├── services/
-│   │   ├── watchlist.service.test.ts
-│   │   └── token.service.test.ts
-│   ├── api/
-│   │   ├── watchlist.api.test.ts
-│   │   └── tokens.api.test.ts
-│   ├── components/
-│   │   ├── TokenSearch.test.tsx
-│   │   ├── TokenDetails.test.tsx
-│   │   └── WatchlistView.test.tsx
-│   └── integration/
-│       └── watchlist-flow.test.ts
-├── jest.config.js
-└── jest.setup.js
+Token Price = (Reserve B / Reserve A) * Reference Price
+USD Price = Token Price * USDC Rate (or SOL Rate * SOL/USD)
 ```
-
-## Learning Approach:
-**For First-Time Unit Testing**:
-1. **Start Simple**: Begin with pure function tests (service methods)
-2. **Learn Patterns**: Arrange-Act-Assert pattern, mocking concepts
-3. **Build Complexity**: Move from unit → integration → component tests
-4. **Focus on Value**: Test behavior users care about, not implementation details
-
-**Testing Philosophy**:
-- **Test behavior, not implementation** - Focus on what users experience
-- **Write tests that prevent regressions** - Cover critical functionality
-- **Keep tests simple and readable** - Tests are documentation
-- **Mock external dependencies** - Jupiter API, file system, network calls
 
 ## Success Criteria:
-- [x] **Testing Framework Setup** - Jest + RTL + TypeScript + mocking utilities ✅
-- [x] **Service Layer Tests** - Comprehensive test suites for WatchlistService and TokenService ✅
-- [ ] **80%+ test coverage** on service layer methods
-- [ ] **All API routes tested** with request/response validation
-- [ ] **Critical user flows covered** - add/remove watchlist operations
-- [ ] **CI/CD ready** - Tests run automatically on commits
-- [x] **Learning complete** - Understanding of testing patterns and best practices ✅
+- [ ] **Pool Data Parsing** - Successfully extract reserve data from pool accounts
+- [ ] **Price Calculation Accuracy** - Prices match Jupiter/DEX rates within 1%
+- [ ] **Real-time Updates** - Live price updates in watchlist under 2 seconds
+- [ ] **USD Conversion** - Accurate USD pricing via USDC/SOL reference pairs
+- [ ] **Error Resilience** - Graceful handling of WebSocket failures
+- [ ] **Learning Complete** - Deep understanding of DEX mechanics and real-time data architecture
 
 ## Next Session Instructions:
-**Role to assume**: Full-stack Test Specialist
-**Task**: Write comprehensive tests for API routes (/api/watchlist and /api/tokens endpoints)
-**Learning goal**: Learn API testing, request validation, response testing, and Next.js App Router testing patterns
+**Role to assume**: DeFi Backend Specialist
+**Task**: Research and implement pool account data parsing for Raydium/Meteora
+**Learning goal**: Understand Solana account structure, DEX pool mechanics, and bytecode parsing techniques
 
-## Task 2 Summary:
-Successfully completed comprehensive service layer test implementation:
-- **WatchlistService**: 13 test cases covering all CRUD operations, business logic, and error handling
-- **TokenService**: 21 test cases covering token management, Jupiter API integration, market data operations
-- **Testing Patterns**: Mastered Arrange-Act-Assert, mocking strategies, async testing
-- **Architecture**: Deep understanding of service dependencies and external API integration
-- **Blocker**: Prepared statement initialization timing requires service refactoring for full execution
+## Technical Architecture Notes:
+**Data Flow**: Helius WebSocket → Pool Account Changes → Reserve Parsing → Price Calculation → Frontend Updates
+**Fallback Strategy**: WebSocket failure → HTTP polling → Cached prices → Error states
+**Performance**: Throttled updates, efficient parsing, minimal re-renders
+**Scalability**: Multiple pool monitoring, batch updates, connection pooling

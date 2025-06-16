@@ -1,3 +1,13 @@
+// === DEX CONSTANTS ===
+
+// Supported DEX platforms for pool data
+export enum DEXType {
+  RAYDIUM = 'Raydium',
+  ORCA = 'Orca',
+  METEORA = 'Meteora',
+  PUMP_FUN = 'swap.pump.fun'
+}
+
 // === TOKEN DATABASE ENTITIES ===
 
 // Global tokens table
@@ -18,7 +28,7 @@ export interface TokenPoolEntity {
   id: number;
   token_address: string;
   pool_id: string;
-  dex: string;
+  dex: DEXType;
   quote_asset: string;
   liquidity: number | null;
   is_primary: number; // SQLite boolean (0/1)
@@ -45,7 +55,7 @@ export interface TokenPool {
   id: number;
   tokenAddress: string;
   poolId: string;
-  dex: string;
+  dex: DEXType;
   quoteAsset: string;
   liquidity?: number;
   isPrimary: boolean;
@@ -79,6 +89,61 @@ export interface JupiterPoolData {
   };
   quoteAsset: string;
   liquidity: number;
+}
+
+// === POOL RESERVE DATA ===
+
+// Pool reserve information from DEX account data
+export interface PoolReserveData {
+  poolId: string;
+  dex: DEXType;
+  baseReserve: number;
+  quoteReserve: number;
+  price: number;
+  baseMint: string;
+  quoteMint: string;
+  baseDecimals: number;
+  quoteDecimals: number;
+  lastUpdated: Date;
+}
+
+// Raydium-specific pool state data
+export interface RaydiumPoolState {
+  status: number;
+  baseDecimal: number;
+  quoteDecimal: number;
+  baseMint: string;
+  quoteMint: string;
+  baseVault: string;
+  quoteVault: string;
+  baseNeedTakePnl: number;
+  quoteNeedTakePnl: number;
+  openOrders: string;
+  lpMint: string;
+}
+
+// Orca Whirlpool state data
+export interface OrcaWhirlpoolState {
+  liquidity: string;
+  sqrtPrice: string;
+  tickCurrentIndex: number;
+  tokenMintA: string;
+  tokenVaultA: string;
+  tokenMintB: string;
+  tokenVaultB: string;
+  feeRate: number;
+  tickSpacing: number;
+}
+
+// Meteora Dynamic AMM state data
+export interface MeteoraPoolState {
+  tokenAMint: string;
+  tokenBMint: string;
+  tokenAVault: string;
+  tokenBVault: string;
+  volatilityAccumulator: number;
+  variableFeeControl: number;
+  activationPoint?: number;
 }
 
 // === LIVE PRICE DATA ===

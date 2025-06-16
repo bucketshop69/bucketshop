@@ -137,6 +137,62 @@ git checkout -b fix/rtk-query-cache-issue
 - `refactor/` - Code improvements without behavior changes
 - `docs/` - Documentation updates
 
+### Sprint Creation Guide
+**IMPORTANT**: When the co-developer asks you to create a new sprint, use this standardized structure for consistency and discoverability.
+
+Update `.claude/current-sprint.md` with the following template:
+
+```markdown
+# Current Sprint: [Sprint Name]
+
+**Status**: [EMOJI] [SPRINT TYPE] - [Brief Description]
+**Current Story**: [Main objective/theme of the sprint]
+**Active Branch**: `feature/[main-sprint-branch]`
+
+## [Strategy/Domain] & Task Breakdown:
+- [ ] Task 1: [Task Name] ([Specialist Role]) **← CURRENT**
+  - **Branch**: `feature/[task-branch-name]`
+  - [Specific deliverable 1]
+  - [Specific deliverable 2]
+  - [Technical requirements]
+- [ ] Task 2: [Task Name] ([Specialist Role])
+  - **Branch**: `feature/[task-branch-name]`
+  - [Deliverables...]
+
+## [Domain] Priorities (High to Low):
+1. **Critical [Component]** - [Description]
+2. **Important [Feature]** - [Description]
+3. **Nice-to-have [Enhancement]** - [Description]
+
+## [Technical Domain] Tools & Framework:
+**Primary Stack**:
+- **[Tool/Library]**: [Purpose and usage]
+- **[Framework]**: [Integration approach]
+
+**[Integration] Strategy**:
+- **[External API]**: [How to integrate]
+- **[Data Source]**: [Processing approach]
+
+## Success Criteria:
+- [ ] **[Major Goal 1]** - [Measurable outcome]
+- [ ] **[Major Goal 2]** - [Specific deliverable]
+- [ ] **[Quality Gate]** - [Testing/validation requirement]
+- [ ] **[Learning Goal]** - [Educational objective achieved]
+
+## Next Session Instructions:
+**Role to assume**: [Specialist Role for next task]
+**Task**: [Specific next action to take]
+**Learning goal**: [Concepts to understand/teach]
+```
+
+**Sprint Planning Best Practices**:
+- **Focused Theme**: Each sprint has a clear technical focus (Testing, Real-time Data, UI/UX, etc.)
+- **Role-Based Tasks**: Assign specialist roles to help Claude understand the context and approach
+- **Learning Integration**: Every task includes educational objectives for the co-developer
+- **Branch Strategy**: One main sprint branch with task-specific feature branches
+- **Measurable Outcomes**: Success criteria should be specific and testable
+- **Status Tracking**: Clear completion states with emoji indicators for quick visual status
+
 ### Issue & Project Planning Template
 Create GitHub Issues for each sprint task using this template:
 
@@ -202,3 +258,10 @@ Follow conventional commits for better tracking:
 - `chore:` - Maintenance tasks
 
 Example: `feat: add Jest testing framework with TypeScript support`
+
+## Memories and Guidelines
+
+- **Commit Messages**: Do not use Claude-related messages in commit messages
+```
+
+</invoke>

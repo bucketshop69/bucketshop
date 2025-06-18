@@ -74,9 +74,14 @@ export class MeteoraPoolService {
    * Parse raw Meteora pool account data into structured format
    */
   private parseMeteoraAccountData(accountData: Buffer): MeteoraPoolState {
-    // Helper function to read u64 as number
-    const readU64 = (offset: number): number => {
-      return Number(accountData.readBigUInt64LE(offset));
+    // Helper function to read u64 and safely convert to number
+    const readU64AsNumber = (offset: number): number => {
+      const bigintValue = accountData.readBigUInt64LE(offset);
+      // For large values, we need to be careful about precision
+      if (bigintValue > Number.MAX_SAFE_INTEGER) {
+        console.warn(`Large value detected at offset ${offset}: ${bigintValue}. Potential precision loss.`);
+      }
+      return Number(bigintValue);
     };
 
     // Helper function to read PublicKey as base64 string
@@ -87,7 +92,13 @@ export class MeteoraPoolService {
     // Helper function to read optional u64
     const readOptionalU64 = (offset: number): number | undefined => {
       const hasValue = accountData.readUInt8(offset) === 1;
-      return hasValue ? Number(accountData.readBigUInt64LE(offset + 1)) : undefined;
+      if (!hasValue) return undefined;
+      
+      const bigintValue = accountData.readBigUInt64LE(offset + 1);
+      if (bigintValue > Number.MAX_SAFE_INTEGER) {
+        console.warn(`Large optional value detected at offset ${offset}: ${bigintValue}. Potential precision loss.`);
+      }
+      return Number(bigintValue);
     };
 
     return {
@@ -95,8 +106,8 @@ export class MeteoraPoolService {
       tokenBMint: readPublicKey(DYNAMIC_AMM_LAYOUT.TOKEN_B_MINT),
       tokenAVault: readPublicKey(DYNAMIC_AMM_LAYOUT.TOKEN_A_VAULT),
       tokenBVault: readPublicKey(DYNAMIC_AMM_LAYOUT.TOKEN_B_VAULT),
-      volatilityAccumulator: readU64(DYNAMIC_AMM_LAYOUT.VOLATILITY_ACCUMULATOR),
-      variableFeeControl: readU64(DYNAMIC_AMM_LAYOUT.VARIABLE_FEE_CONTROL),
+      volatilityAccumulator: readU64AsNumber(DYNAMIC_AMM_LAYOUT.VOLATILITY_ACCUMULATOR),
+      variableFeeControl: readU64AsNumber(DYNAMIC_AMM_LAYOUT.VARIABLE_FEE_CONTROL),
       activationPoint: readOptionalU64(DYNAMIC_AMM_LAYOUT.ACTIVATION_POINT)
     };
   }

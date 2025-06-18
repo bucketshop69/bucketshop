@@ -31,7 +31,7 @@ export const store = configureStore({
     }).concat(baseApi.middleware),
   
   // Enable Redux DevTools in development
-  devTools: process.env.NODE_ENV !== 'production',
+  devTools: true,
 });
 
 // Enable listener behavior for RTK Query (refetchOnFocus, refetchOnReconnect)

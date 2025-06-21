@@ -117,6 +117,14 @@ This is a **collaborative learning project**. When working on any task:
 4. **Wait for Approval**: Get explicit "go ahead" before making any changes
 5. **No Assumptions**: Never assume permission to proceed with implementation
 
+**UI Change Verification Workflow**:
+- **No Dev Server Debugging**: Don't start dev servers or try to test UI changes yourself
+- **Make Changes First**: Implement the UI changes/components as planned
+- **Ask for Verification**: Request user to check if the changes work as expected in their browser
+- **Describe Expected Behavior**: Clearly explain what should happen after the change
+- **Wait for Confirmation**: Get user feedback before proceeding to next step
+- **Example**: "Can you check if the Meteora tab is now enabled and clickable in your browser?"
+
 ## GitHub Workflow & Project Management
 
 ### Branch Strategy

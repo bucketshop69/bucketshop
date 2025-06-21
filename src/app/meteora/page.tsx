@@ -1,5 +1,5 @@
 import { AppLayout } from '@/components/layout/AppLayout';
-import { Card } from '@/components/ui/card';
+import { MeteoraMainLayout } from '@/components/meteora/MeteoraMainLayout';
 
 /**
  * Meteora Pool Discovery Page
@@ -10,18 +10,7 @@ import { Card } from '@/components/ui/card';
 export default function MeteoraPage() {
   return (
     <AppLayout>
-      <div className="h-full p-4 flex items-center justify-center">
-        <Card className="p-6 text-center">
-          <div className="text-4xl mb-2">☄️</div>
-          <h3 className="font-semibold mb-2">Meteora Pool Discovery</h3>
-          <p className="text-sm text-muted-foreground mb-4">
-            Browse and select DLMM pools for position creation
-          </p>
-          <p className="text-xs text-muted-foreground">
-            Pool search and strip components coming next...
-          </p>
-        </Card>
-      </div>
+      <MeteoraMainLayout />
     </AppLayout>
   );
 }

@@ -15,7 +15,7 @@ const DLMM_CONFIG = {
 // ===== INTERFACES =====
 
 // Pool Discovery Interfaces
-interface MeteoraPoolInfo {
+export interface MeteoraPoolInfo {
   address: string;
   name: string;
   mint_x: string;
@@ -29,10 +29,50 @@ interface MeteoraPoolInfo {
   max_fee_percentage: string;
   protocol_fee_percentage: string;
   liquidity: string;
-  reward_infos: any[];
-  farm_infos: any[];
-  last_updated_at: string;
   current_price: number;
+  apr: number;
+  apy: number;
+  farm_apr: number;
+  farm_apy: number;
+  cumulative_fee_volume: string;
+  cumulative_trade_volume: string;
+  trade_volume_24h: number;
+  fees_24h: number;
+  today_fees: number;
+  hide: boolean;
+  is_blacklisted: boolean;
+  tags: string[];
+  launchpad: any;
+  reward_mint_x: string;
+  reward_mint_y: string;
+  fee_tvl_ratio: {
+    min_30: number;
+    hour_1: number;
+    hour_2: number;
+    [key: string]: number;
+  };
+  fees: {
+    min_30: number;
+    hour_1: number;
+    hour_2: number;
+    [key: string]: number;
+  };
+}
+
+export interface MeteoraTokenGroup {
+  name: string;
+  pairs: MeteoraPoolInfo[];
+  aggregates: {
+    totalLiquidity: number;
+    totalVolume24h: number;
+    highestAPR: number;
+    totalPools: number;
+    averageAPR: number;
+  };
+}
+
+export interface MeteoraGroupResponse {
+  groups: MeteoraTokenGroup[];
 }
 
 interface PoolSearchFilters {
@@ -112,6 +152,32 @@ interface OptimalPercentages {
 }
 
 // ===== HELPER FUNCTIONS =====
+
+/**
+ * Calculate aggregate metrics for a token group
+ */
+function calculateGroupAggregates(allPairs: MeteoraPoolInfo[]) {
+  const totalLiquidity = allPairs.reduce((sum, pool) => 
+    sum + parseFloat(pool.liquidity || '0'), 0
+  );
+  
+  const totalVolume24h = allPairs.reduce((sum, pool) => 
+    sum + (pool.trade_volume_24h || 0), 0
+  );
+  
+  const validAPRs = allPairs.map(pool => pool.apr || 0).filter(apr => apr > 0);
+  const highestAPR = validAPRs.length > 0 ? Math.max(...validAPRs) : 0;
+  const averageAPR = validAPRs.length > 0 ? validAPRs.reduce((sum, apr) => sum + apr, 0) / validAPRs.length : 0;
+  
+  return {
+    totalLiquidity,
+    totalVolume24h,
+    highestAPR,
+    totalPools: allPairs.length,
+    averageAPR
+  };
+}
+
 async function createDLMMPool(lbPairAddress: PublicKey): Promise<DLMM> {
 
 
@@ -648,19 +714,60 @@ async function claimAllFeesFromPositions(
 /**
  * Get all available Meteora DLMM pools from the API
  */
+export async function getAvailableGroups(): Promise<MeteoraTokenGroup[]> {
+  try {
+    const response = await fetch('https://v2.meteora.ag/dlmm-api/pair/all_by_groups?limit=30&page=0&sort_key=volume&order_by=desc');
+
+    if (!response.ok) {
+      throw new Error(`Failed to fetch pool groups: ${response.status} ${response.statusText}`);
+    }
+
+    const data: MeteoraGroupResponse = await response.json();
+
+    // Log first few items to see actual structure
+    if (data.groups && data.groups.length > 0 && data.groups[0].pairs.length > 0) {
+      console.log('Sample group structure:', JSON.stringify(data.groups[0], null, 2));
+    }
+
+    // Process groups: calculate aggregates from ALL pools, then limit display to top 5
+    const processedGroups = data.groups.map(group => {
+      // Filter out blacklisted/hidden pools
+      const validPairs = group.pairs.filter(pool => !pool.is_blacklisted && !pool.hide);
+      
+      // Calculate aggregates from ALL valid pools
+      const aggregates = calculateGroupAggregates(validPairs);
+      
+      // Return group with aggregates and top 5 pairs for display
+      return {
+        ...group,
+        pairs: validPairs.slice(0, 5), // Only top 5 for display
+        aggregates
+      };
+    }).filter(group => group.pairs.length > 0);
+
+    console.log(`Loaded ${processedGroups.length} token groups (showing top 5 pairs each, aggregates from all pools)`);
+    return processedGroups;
+
+  } catch (error: any) {
+    console.error('Failed to fetch Meteora pool groups:', error);
+    throw new Error(`Pool group discovery failed: ${error.message}`);
+  }
+}
+
+// Keep the old function for backward compatibility but now it calls the new one
 export async function getAvailablePools(): Promise<MeteoraPoolInfo[]> {
   try {
-    const response = await fetch('https://dlmm-api.meteora.ag/pair/all');
+    const groups = await getAvailableGroups();
     
-    if (!response.ok) {
-      throw new Error(`Failed to fetch pools: ${response.status} ${response.statusText}`);
-    }
-    
-    const pools: MeteoraPoolInfo[] = await response.json();
+    // Flatten groups into pools for backward compatibility
+    const pools: MeteoraPoolInfo[] = [];
+    groups.forEach(group => {
+      pools.push(...group.pairs);
+    });
+
     return pools;
-    
   } catch (error: any) {
-    console.error('Failed to fetch Meteora pools:', error);
+    console.error('Failed to get available pools:', error);
     throw new Error(`Pool discovery failed: ${error.message}`);
   }
 }
@@ -671,11 +778,11 @@ export async function getAvailablePools(): Promise<MeteoraPoolInfo[]> {
 export async function getPoolsByToken(tokenAddress: string): Promise<MeteoraPoolInfo[]> {
   try {
     const allPools = await getAvailablePools();
-    
-    return allPools.filter(pool => 
+
+    return allPools.filter(pool =>
       pool.mint_x === tokenAddress || pool.mint_y === tokenAddress
     );
-    
+
   } catch (error: any) {
     console.error('Failed to search pools by token:', error);
     throw new Error(`Token pool search failed: ${error.message}`);
@@ -688,12 +795,12 @@ export async function getPoolsByToken(tokenAddress: string): Promise<MeteoraPool
 export async function getPopularPools(limit: number = 10): Promise<MeteoraPoolInfo[]> {
   try {
     const allPools = await getAvailablePools();
-    
+
     // Sort by liquidity (highest first) and take top N
     return allPools
       .sort((a, b) => parseFloat(b.liquidity) - parseFloat(a.liquidity))
       .slice(0, limit);
-      
+
   } catch (error: any) {
     console.error('Failed to fetch popular pools:', error);
     throw new Error(`Popular pools fetch failed: ${error.message}`);
@@ -707,35 +814,35 @@ export async function searchPools(filters: PoolSearchFilters): Promise<MeteoraPo
   try {
     const allPools = await getAvailablePools();
     let filteredPools = allPools;
-    
+
     // Filter by token address
     if (filters.tokenAddress) {
-      filteredPools = filteredPools.filter(pool => 
+      filteredPools = filteredPools.filter(pool =>
         pool.mint_x === filters.tokenAddress || pool.mint_y === filters.tokenAddress
       );
     }
-    
+
     // Filter by minimum liquidity
     if (filters.minLiquidity) {
-      filteredPools = filteredPools.filter(pool => 
+      filteredPools = filteredPools.filter(pool =>
         parseFloat(pool.liquidity) >= filters.minLiquidity!
       );
     }
-    
+
     // Filter by maximum bin step
     if (filters.maxBinStep) {
-      filteredPools = filteredPools.filter(pool => 
+      filteredPools = filteredPools.filter(pool =>
         pool.bin_step <= filters.maxBinStep!
       );
     }
-    
-    // Filter by rewards
+
+    // Filter by rewards (using farm_apr as indicator of rewards)
     if (filters.hasRewards) {
-      filteredPools = filteredPools.filter(pool => 
-        pool.reward_infos && pool.reward_infos.length > 0
+      filteredPools = filteredPools.filter(pool =>
+        pool.farm_apr > 0
       );
     }
-    
+
     // Sort results
     if (filters.sortBy) {
       switch (filters.sortBy) {
@@ -746,19 +853,18 @@ export async function searchPools(filters: PoolSearchFilters): Promise<MeteoraPo
           filteredPools.sort((a, b) => parseFloat(b.base_fee_percentage) - parseFloat(a.base_fee_percentage));
           break;
         case 'volume':
-          // Note: Volume not available in current API response, fallback to liquidity
-          filteredPools.sort((a, b) => parseFloat(b.liquidity) - parseFloat(a.liquidity));
+          filteredPools.sort((a, b) => b.trade_volume_24h - a.trade_volume_24h);
           break;
       }
     }
-    
+
     // Apply limit
     if (filters.limit) {
       filteredPools = filteredPools.slice(0, filters.limit);
     }
-    
+
     return filteredPools;
-    
+
   } catch (error: any) {
     console.error('Failed to search pools with filters:', error);
     throw new Error(`Pool search failed: ${error.message}`);
@@ -771,9 +877,9 @@ export async function searchPools(filters: PoolSearchFilters): Promise<MeteoraPo
 export async function getPoolInfo(poolAddress: string): Promise<MeteoraPoolInfo | null> {
   try {
     const allPools = await getAvailablePools();
-    
+
     return allPools.find(pool => pool.address === poolAddress) || null;
-    
+
   } catch (error: any) {
     console.error('Failed to get pool info:', error);
     throw new Error(`Pool info fetch failed: ${error.message}`);
@@ -786,12 +892,12 @@ export async function getPoolInfo(poolAddress: string): Promise<MeteoraPoolInfo 
 export async function getPoolsForTokenPair(tokenA: string, tokenB: string): Promise<MeteoraPoolInfo[]> {
   try {
     const allPools = await getAvailablePools();
-    
-    return allPools.filter(pool => 
+
+    return allPools.filter(pool =>
       (pool.mint_x === tokenA && pool.mint_y === tokenB) ||
       (pool.mint_x === tokenB && pool.mint_y === tokenA)
     );
-    
+
   } catch (error: any) {
     console.error('Failed to get pools for token pair:', error);
     throw new Error(`Token pair pool search failed: ${error.message}`);

@@ -1,11 +1,12 @@
 'use client';
 
 import { useEffect } from 'react';
-import { useDispatch } from 'react-redux';
+import { useDispatch, useSelector } from 'react-redux';
 import { AppDispatch } from '@/store';
-import { setLoading, setGroups, setError } from '@/store/slices/meteoraSlice';
+import { setLoading, setGroups, setError, selectCurrentView, selectMeteoraSelectedPool } from '@/store/slices/meteoraSlice';
 import { getAvailableGroups } from '@/lib/services/meteora';
 import { GroupStripList } from './GroupStripList';
+import { PoolDetailView } from './PoolDetailView';
 
 /**
  * Meteora Main Layout Component
@@ -13,15 +14,18 @@ import { GroupStripList } from './GroupStripList';
  * This component serves as the main container for Meteora functionality:
  * - Loads pool data on mount using the service layer
  * - Manages loading/error states through Redux
- * - Renders the pool discovery interface
+ * - Handles view switching between pool selection and pool details
  * 
  * Architecture:
  * - Uses RTK for state management (no RTK Query)
  * - Integrates with existing Meteora service
  * - Designed for 25% panel constraints
+ * - Switches views based on Redux state (no additional routes)
  */
 export function MeteoraMainLayout() {
   const dispatch = useDispatch<AppDispatch>();
+  const currentView = useSelector(selectCurrentView);
+  const selectedPool = useSelector(selectMeteoraSelectedPool);
 
   // Load groups on component mount
   useEffect(() => {
@@ -38,6 +42,12 @@ export function MeteoraMainLayout() {
     loadGroups();
   }, [dispatch]);
 
+  // Render different views based on current state
+  if (currentView === 'pool-detail' && selectedPool) {
+    return <PoolDetailView pool={selectedPool} />;
+  }
+
+  // Default: pool selection view
   return (
     <div className="h-full flex flex-col">
       {/* Header */}

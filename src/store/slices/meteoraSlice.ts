@@ -3,6 +3,9 @@ import { createSlice, PayloadAction, createSelector } from "@reduxjs/toolkit"
 // Import the interfaces from the service
 import { MeteoraPoolInfo, MeteoraTokenGroup } from '@/lib/services/meteora';
 
+// View state for the UI
+type MeteoraView = 'pool-selection' | 'pool-detail';
+
 interface MeteoraState {
     // Normalized entities
     groups: {
@@ -20,6 +23,9 @@ interface MeteoraState {
     loading: boolean;
     error: string | null;
     searchQuery: string;
+    
+    // View management
+    currentView: MeteoraView;
 }
 
 
@@ -36,7 +42,10 @@ const initialState: MeteoraState = {
     selectedPoolId: null,
     loading: false,
     error: null,
-    searchQuery: ''
+    searchQuery: '',
+    
+    // View management
+    currentView: 'pool-selection'
 }
 
 const meteoraSlice = createSlice({
@@ -112,6 +121,21 @@ const meteoraSlice = createSlice({
                 // Group is collapsed, add it
                 state.expandedGroups.push(groupName);
             }
+        },
+        
+        // View management actions
+        showPoolDetail(state, action: PayloadAction<string>) {
+            state.selectedPoolId = action.payload;
+            state.currentView = 'pool-detail';
+        },
+        
+        showPoolSelection(state) {
+            state.currentView = 'pool-selection';
+            state.selectedPoolId = null;
+        },
+        
+        setCurrentView(state, action: PayloadAction<MeteoraView>) {
+            state.currentView = action.payload;
         }
     }
 });
@@ -124,7 +148,10 @@ export const {
     clearSelectedPool,
     setSearchQuery,
     setGroups,
-    toggleGroupExpansion
+    toggleGroupExpansion,
+    showPoolDetail,
+    showPoolSelection,
+    setCurrentView
 } = meteoraSlice.actions;
 
 // Selectors - Normalized Pattern
@@ -173,6 +200,10 @@ export const selectExpandedGroups = (state: { meteora: MeteoraState }) =>
 
 export const isGroupExpanded = (state: { meteora: MeteoraState }, groupName: string) => 
     state.meteora.expandedGroups.includes(groupName);
+
+// View management selectors
+export const selectCurrentView = (state: { meteora: MeteoraState }) => 
+    state.meteora.currentView;
 
 // Memoized filtered groups based on search query
 export const selectFilteredGroups = createSelector(

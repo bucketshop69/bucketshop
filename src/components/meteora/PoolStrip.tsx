@@ -2,12 +2,11 @@
 
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/store';
-import { selectPool } from '@/store/slices/meteoraSlice';
+import { showPoolDetail } from '@/store/slices/meteoraSlice';
 import { MeteoraPoolInfo } from '@/lib/services/meteora';
 import { Card } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { ArrowRight, TrendingUp } from 'lucide-react';
+import { TrendingUp } from 'lucide-react';
 
 interface PoolStripProps {
   pool: MeteoraPoolInfo;
@@ -27,9 +26,7 @@ export function PoolStrip({ pool, isNested = false }: PoolStripProps) {
   const dispatch = useDispatch<AppDispatch>();
 
   const handleSelectPool = () => {
-    dispatch(selectPool(pool.address));
-    // TODO: Navigate to pool detail/position creation
-    console.log('Selected pool:', pool.name);
+    dispatch(showPoolDetail(pool.address));
   };
 
   // Format large numbers for display

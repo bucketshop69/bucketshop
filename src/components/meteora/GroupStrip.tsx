@@ -3,7 +3,7 @@
 import { useSelector, useDispatch } from 'react-redux';
 import { AppDispatch } from '@/store';
 import { toggleGroupExpansion, isGroupExpanded } from '@/store/slices/meteoraSlice';
-import { MeteoraTokenGroup } from '@/lib/services/meteora.service';
+import { MeteoraTokenGroup } from '@/lib/services/meteora';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

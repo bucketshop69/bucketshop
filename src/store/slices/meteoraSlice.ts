@@ -1,7 +1,7 @@
-import { createSlice, PayloadAction } from "@reduxjs/toolkit"
+import { createSlice, PayloadAction, createSelector } from "@reduxjs/toolkit"
 
 // Import the interfaces from the service
-import { MeteoraPoolInfo, MeteoraTokenGroup } from '@/lib/services/meteora.service';
+import { MeteoraPoolInfo, MeteoraTokenGroup } from '@/lib/services/meteora';
 
 interface MeteoraState {
     // Normalized entities
@@ -174,17 +174,18 @@ export const selectExpandedGroups = (state: { meteora: MeteoraState }) =>
 export const isGroupExpanded = (state: { meteora: MeteoraState }, groupName: string) => 
     state.meteora.expandedGroups.includes(groupName);
 
-// Filtered groups based on search query
-export const selectFilteredGroups = (state: { meteora: MeteoraState }) => {
-    const groups = selectAllGroups(state);
-    const searchQuery = state.meteora.searchQuery.toLowerCase();
-    
-    if (!searchQuery) return groups;
-    
-    return groups.filter(group => 
-        group.name.toLowerCase().includes(searchQuery)
-    );
-};
+// Memoized filtered groups based on search query
+export const selectFilteredGroups = createSelector(
+    [selectAllGroups, selectMeteoraSearchQuery],
+    (groups, searchQuery) => {
+        if (!searchQuery) return groups;
+        
+        const query = searchQuery.toLowerCase();
+        return groups.filter(group => 
+            group.name.toLowerCase().includes(query)
+        );
+    }
+);
 
 
 // Export reducer

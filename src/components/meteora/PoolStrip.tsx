@@ -3,7 +3,7 @@
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/store';
 import { selectPool } from '@/store/slices/meteoraSlice';
-import { MeteoraPoolInfo } from '@/lib/services/meteora.service';
+import { MeteoraPoolInfo } from '@/lib/services/meteora';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';

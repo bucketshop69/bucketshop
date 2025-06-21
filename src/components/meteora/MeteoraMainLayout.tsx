@@ -4,7 +4,7 @@ import { useEffect } from 'react';
 import { useDispatch } from 'react-redux';
 import { AppDispatch } from '@/store';
 import { setLoading, setGroups, setError } from '@/store/slices/meteoraSlice';
-import { getAvailableGroups } from '@/lib/services/meteora.service';
+import { getAvailableGroups } from '@/lib/services/meteora';
 import { GroupStripList } from './GroupStripList';
 
 /**

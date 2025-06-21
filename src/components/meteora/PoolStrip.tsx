@@ -1,8 +1,6 @@
 'use client';
 
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '@/store';
-import { showPoolDetail } from '@/store/slices/meteoraSlice';
+import { useRouter } from 'next/navigation';
 import { MeteoraPoolInfo } from '@/lib/services/meteora';
 import { Card } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -23,10 +21,10 @@ interface PoolStripProps {
  * - Optimized for narrow 25% panel width
  */
 export function PoolStrip({ pool, isNested = false }: PoolStripProps) {
-  const dispatch = useDispatch<AppDispatch>();
+  const router = useRouter();
 
   const handleSelectPool = () => {
-    dispatch(showPoolDetail(pool.address));
+    router.push(`/meteora/${pool.address}`);
   };
 
   // Format large numbers for display

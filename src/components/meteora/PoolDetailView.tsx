@@ -1,10 +1,8 @@
 'use client';
 
-import { useState } from 'react';
-import { useDispatch } from 'react-redux';
-import { AppDispatch } from '@/store';
-import { showPoolSelection } from '@/store/slices/meteoraSlice';
-import { MeteoraPoolInfo } from '@/lib/services/meteora';
+import { useState, useEffect } from 'react';
+import { useRouter } from 'next/navigation';
+import { getPoolInfo, MeteoraPoolInfo } from '@/lib/services/meteora';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -12,11 +10,13 @@ import {
   ArrowLeft, 
   TrendingUp, 
   ChevronDown, 
-  ChevronRight
+  ChevronRight,
+  Loader2,
+  AlertCircle 
 } from 'lucide-react';
 
 interface PoolDetailViewProps {
-  pool: MeteoraPoolInfo;
+  poolAddress: string;
 }
 
 /**
@@ -25,16 +25,43 @@ interface PoolDetailViewProps {
  * Displays comprehensive pool information with:
  * - Critical pool metrics (Tier 1)
  * - Expandable detailed information (Tier 2/3)
- * - Back navigation to pool selection via Redux
+ * - Back navigation to pool selection via router
  * - Current positions list (future)
  * - Inline position creation form (future)
  */
-export function PoolDetailView({ pool }: PoolDetailViewProps) {
-  const dispatch = useDispatch<AppDispatch>();
+export function PoolDetailView({ poolAddress }: PoolDetailViewProps) {
+  const router = useRouter();
+  const [pool, setPool] = useState<MeteoraPoolInfo | null>(null);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [detailsExpanded, setDetailsExpanded] = useState(false);
 
+  // Load pool information
+  useEffect(() => {
+    const loadPoolInfo = async () => {
+      try {
+        setLoading(true);
+        setError(null);
+        const poolData = await getPoolInfo(poolAddress);
+        
+        if (!poolData) {
+          setError('Pool not found');
+          return;
+        }
+        
+        setPool(poolData);
+      } catch (err: any) {
+        setError(err.message || 'Failed to load pool information');
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    loadPoolInfo();
+  }, [poolAddress]);
+
   const handleBackToPoolSelection = () => {
-    dispatch(showPoolSelection());
+    router.push('/meteora');
   };
 
   // Format utilities
@@ -62,6 +89,64 @@ export function PoolDetailView({ pool }: PoolDetailViewProps) {
     }
   };
 
+  // Loading state
+  if (loading) {
+    return (
+      <div className="h-full flex flex-col">
+        {/* Header with back button */}
+        <div className="p-4 border-b">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleBackToPoolSelection}
+            className="mb-2"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Pools
+          </Button>
+        </div>
+        
+        {/* Loading content */}
+        <div className="flex-1 flex items-center justify-center">
+          <div className="flex items-center space-x-2 text-muted-foreground">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm">Loading pool...</span>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  // Error state
+  if (error || !pool) {
+    return (
+      <div className="h-full flex flex-col">
+        {/* Header with back button */}
+        <div className="p-4 border-b">
+          <Button 
+            variant="ghost" 
+            size="sm" 
+            onClick={handleBackToPoolSelection}
+            className="mb-2"
+          >
+            <ArrowLeft className="h-4 w-4 mr-2" />
+            Back to Pools
+          </Button>
+        </div>
+        
+        {/* Error content */}
+        <div className="flex-1 flex items-center justify-center p-4">
+          <Card className="p-6 border-destructive/50 bg-destructive/5 w-full">
+            <div className="flex items-center space-x-2 text-destructive mb-2">
+              <AlertCircle className="h-4 w-4" />
+              <span className="text-sm font-medium">Pool Error</span>
+            </div>
+            <p className="text-xs text-destructive/80">{error}</p>
+          </Card>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="h-full flex flex-col">

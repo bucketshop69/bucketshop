@@ -5,14 +5,12 @@ import { useRouter } from 'next/navigation';
 import { getPoolInfo, MeteoraPoolInfo } from '@/lib/services/meteora';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  ArrowLeft, 
-  TrendingUp, 
-  ChevronDown, 
+import {
+  ArrowLeft,
+  ChevronDown,
   ChevronRight,
   Loader2,
-  AlertCircle 
+  AlertCircle
 } from 'lucide-react';
 
 interface PoolDetailViewProps {
@@ -43,12 +41,12 @@ export function PoolDetailView({ poolAddress }: PoolDetailViewProps) {
         setLoading(true);
         setError(null);
         const poolData = await getPoolInfo(poolAddress);
-        
+
         if (!poolData) {
           setError('Pool not found');
           return;
         }
-        
+
         setPool(poolData);
       } catch (err: any) {
         setError(err.message || 'Failed to load pool information');
@@ -95,9 +93,9 @@ export function PoolDetailView({ poolAddress }: PoolDetailViewProps) {
       <div className="h-full flex flex-col">
         {/* Header with back button */}
         <div className="p-4 border-b">
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleBackToPoolSelection}
             className="mb-2"
           >
@@ -105,7 +103,7 @@ export function PoolDetailView({ poolAddress }: PoolDetailViewProps) {
             Back to Pools
           </Button>
         </div>
-        
+
         {/* Loading content */}
         <div className="flex-1 flex items-center justify-center">
           <div className="flex items-center space-x-2 text-muted-foreground">
@@ -123,9 +121,9 @@ export function PoolDetailView({ poolAddress }: PoolDetailViewProps) {
       <div className="h-full flex flex-col">
         {/* Header with back button */}
         <div className="p-4 border-b">
-          <Button 
-            variant="ghost" 
-            size="sm" 
+          <Button
+            variant="ghost"
+            size="sm"
             onClick={handleBackToPoolSelection}
             className="mb-2"
           >
@@ -133,7 +131,7 @@ export function PoolDetailView({ poolAddress }: PoolDetailViewProps) {
             Back to Pools
           </Button>
         </div>
-        
+
         {/* Error content */}
         <div className="flex-1 flex items-center justify-center p-4">
           <Card className="p-6 border-destructive/50 bg-destructive/5 w-full">
@@ -150,93 +148,38 @@ export function PoolDetailView({ poolAddress }: PoolDetailViewProps) {
 
   return (
     <div className="h-full flex flex-col">
-      {/* Header with back button */}
-      <div className="p-4 border-b">
-        <Button 
-          variant="ghost" 
-          size="sm" 
-          onClick={handleBackToPoolSelection}
-          className="mb-3"
-        >
-          <ArrowLeft className="h-4 w-4 mr-2" />
-          Back to Pools
-        </Button>
-        
-        {/* Pool title */}
+      {/* Compact header */}
+      <div className="p-3 border-b space-y-2">
         <div className="flex items-center justify-between">
-          <div>
-            <h2 className="font-semibold text-lg">{pool.name}</h2>
-            <div className="flex items-center space-x-2 mt-1">
-              <Badge variant="outline" className="text-xs">
-                {pool.bin_step}% Fee
-              </Badge>
-              {pool.farm_apr > 0 && (
-                <Badge variant="secondary" className="text-xs">
-                  🌾 Rewards
-                </Badge>
-              )}
-            </div>
-          </div>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleBackToPoolSelection}
+            className="h-auto p-1"
+          >
+            <ArrowLeft className="h-4 w-4 mr-1" />
+            <span className="text-sm">{pool.name}</span>
+          </Button>
+          <div className="text-sm font-bold">{formatPrice(pool.current_price)}</div>
+        </div>
+
+        {/* Compact metrics in single row */}
+        <div className="flex justify-between text-xs">
+          <span className="text-muted-foreground">APR:</span>
+          <span className="font-medium text-green-600">{pool.apr.toFixed(1)}%</span>
+          <span className="text-muted-foreground">Liq:</span>
+          <span className="font-medium">{formatCurrency(pool.liquidity)}</span>
+          <span className="text-muted-foreground">Vol:</span>
+          <span className="font-medium">{formatCurrency(pool.trade_volume_24h)}</span>
         </div>
       </div>
 
       {/* Main content area */}
       <div className="flex-1 overflow-y-auto">
-        {/* Critical Information (Tier 1) */}
-        <div className="p-4 space-y-4">
-          {/* Current Price */}
-          <Card className="p-4">
-            <div className="text-center">
-              <div className="text-xs text-muted-foreground mb-1">Current Price</div>
-              <div className="text-2xl font-bold">{formatPrice(pool.current_price)}</div>
-            </div>
-          </Card>
-
-          {/* Key Metrics */}
-          <div className="grid grid-cols-2 gap-3">
-            {/* APR */}
-            <Card className="p-3">
-              <div className="text-xs text-muted-foreground mb-1">APR</div>
-              <div className="flex items-center">
-                <TrendingUp className="h-3 w-3 mr-1 text-green-600" />
-                <span className="font-semibold text-sm">
-                  {pool.apr.toFixed(1)}%
-                  {pool.farm_apr > 0 && (
-                    <span className="text-xs text-green-600 ml-1">
-                      (+{pool.farm_apr.toFixed(1)}%)
-                    </span>
-                  )}
-                </span>
-              </div>
-            </Card>
-
-            {/* Liquidity */}
-            <Card className="p-3">
-              <div className="text-xs text-muted-foreground mb-1">Liquidity</div>
-              <div className="font-semibold text-sm">
-                {formatCurrency(pool.liquidity)}
-              </div>
-            </Card>
-
-            {/* 24h Volume */}
-            <Card className="p-3">
-              <div className="text-xs text-muted-foreground mb-1">Volume 24h</div>
-              <div className="font-semibold text-sm">
-                {formatCurrency(pool.trade_volume_24h)}
-              </div>
-            </Card>
-
-            {/* 24h Fees */}
-            <Card className="p-3">
-              <div className="text-xs text-muted-foreground mb-1">Fees 24h</div>
-              <div className="font-semibold text-sm">
-                {formatCurrency(pool.fees_24h)}
-              </div>
-            </Card>
-          </div>
+        <div className="p-2 space-y-4">
 
           {/* Expandable Details (Tier 2/3) */}
-          <Card className="p-4">
+          <Card className="p-2">
             <Button
               variant="ghost"
               size="sm"
@@ -252,7 +195,7 @@ export function PoolDetailView({ poolAddress }: PoolDetailViewProps) {
             </Button>
 
             {detailsExpanded && (
-              <div className="mt-4 space-y-3 pt-3 border-t">
+              <div className="mt-1 space-y-3 pt-1 border-t">
                 {/* Token Reserves */}
                 <div className="grid grid-cols-2 gap-3 text-xs">
                   <div>
@@ -287,7 +230,7 @@ export function PoolDetailView({ poolAddress }: PoolDetailViewProps) {
           </Card>
 
           {/* Placeholder sections for future implementation */}
-          
+
           {/* Current Positions Section */}
           <Card className="p-4">
             <h3 className="text-sm font-medium mb-2">Your Positions</h3>

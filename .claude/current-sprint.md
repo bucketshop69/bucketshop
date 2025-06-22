@@ -29,19 +29,26 @@
   - ✅ Normalized Redux state management for groups and pools
   - ✅ Service layer aggregate calculations for accurate metrics
   - ✅ Pool selection handling for position creation flow
-- [ ] Task 4: Position Configuration Form (UI/UX Specialist) **← CURRENT**
+- [x] Task 4: Pool Detail Navigation & Layout Groups (Full-stack Developer) **COMPLETED** ✅
+  - **Branch**: `feature/meteora-position-ui` ✅
+  - ✅ Create (dapp_panel) layout group with shared AppLayout wrapper
+  - ✅ Implement /meteora/[poolAddress] dynamic routes for pool details
+  - ✅ Fix Next.js 15 async params compatibility
+  - ✅ Replace Redux view switching with native Next.js routing
+  - ✅ Ensure all routes work within 25% panel constraint
+- [ ] Task 5: Position Configuration Form (UI/UX Specialist) **← CURRENT**
   - **Branch**: `feature/meteora-position-ui`
   - Amount inputs with token balance validation
   - Range selector (percentage-based vs bin-based)
   - Strategy selection (Spot, Curve, Bid-Ask)
   - Price range visualization
-- [ ] Task 5: Transaction Flow Management (Full-stack Developer)
+- [ ] Task 6: Transaction Flow Management (Full-stack Developer)
   - **Branch**: `feature/meteora-position-ui`
   - Wallet connection integration
   - Transaction confirmation dialogs
   - Loading states and progress indicators
   - Success/error handling and feedback
-- [ ] Task 6: Position Creation Integration (DeFi Integration Specialist)
+- [ ] Task 7: Position Creation Integration (DeFi Integration Specialist)
   - **Branch**: `feature/meteora-position-ui`
   - Connect UI components to Meteora service
   - Position creation transaction flow
@@ -86,6 +93,7 @@ initializePositionAndAddLiquidityByStrategy() → Transaction Success
 - [x] **Meteora SDK Research** - Complete understanding of available methods ✅
 - [x] **Pool Discovery Service** - Fetch and display available DLMM pools ✅
 - [x] **Pool Selection UI** - Intuitive pool browsing and selection ✅
+- [x] **Pool Detail Navigation** - Scalable routing with /meteora/poolAddress ✅
 - [ ] **Position Configuration** - User-friendly range and strategy setup
 - [ ] **Transaction Integration** - Seamless wallet connection and position creation
 - [ ] **Error Handling** - Graceful handling of failures and edge cases

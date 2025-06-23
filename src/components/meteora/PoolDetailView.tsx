@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { getPoolInfo, MeteoraPoolInfo } from '@/lib/services/meteora';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
+import { PositionConfigForm } from './PositionConfigForm';
 import {
   ArrowLeft,
   ChevronDown,
@@ -232,7 +233,7 @@ export function PoolDetailView({ poolAddress }: PoolDetailViewProps) {
           {/* Placeholder sections for future implementation */}
 
           {/* Current Positions Section */}
-          <Card className="p-4">
+          <Card className="p-2">
             <h3 className="text-sm font-medium mb-2">Your Positions</h3>
             <div className="text-center py-6 text-muted-foreground">
               <div className="text-xs">No positions found</div>
@@ -240,14 +241,8 @@ export function PoolDetailView({ poolAddress }: PoolDetailViewProps) {
             </div>
           </Card>
 
-          {/* Position Creation Section */}
-          <Card className="p-4">
-            <h3 className="text-sm font-medium mb-3">Create Position</h3>
-            <div className="text-center py-8 text-muted-foreground">
-              <div className="text-xs mb-2">Position configuration form</div>
-              <div className="text-xs">Coming next...</div>
-            </div>
-          </Card>
+          {/* Position Creation Form */}
+          <PositionConfigForm pool={pool} />
         </div>
       </div>
     </div>

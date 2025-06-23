@@ -1,17 +1,21 @@
+'use client';
+
 import { NavBar } from '@/components/layout/NavBar';
 import { DAppPanel } from '@/components/dapp/DAppPanel';
-import { WatchlistView } from '@/components/watchlist/WatchlistView';
+
+interface AppLayoutProps {
+  children: React.ReactNode;
+}
 
 /**
- * Main BucketShop Application Page
+ * Main Application Layout
  * 
- * This demonstrates the complete architecture:
- * 1. NavBar with search at top
- * 2. 75/25 split layout  
- * 3. DApp panel with tabs
- * 4. WatchlistView using RTK Query
+ * Provides the consistent 75/25 split layout:
+ * - NavBar at top
+ * - 75% chart area (left)
+ * - 25% DApp panel (right) with route outlet
  */
-export default function Home() {
+export function AppLayout({ children }: AppLayoutProps) {
   return (
     <div className="min-h-screen bg-background">
       {/* Navigation Bar - Full Width */}
@@ -19,7 +23,7 @@ export default function Home() {
 
       {/* Main Content Area - 75/25 Split */}
       <div className="flex h-[calc(100vh-80px)]">
-        {/* Chart Area - 75% (Left Side) */}
+        {/* Chart Area - 75% (Left Side) - Always Visible */}
         <div className="flex-1 bg-muted/10 border-r">
           <div className="h-full flex items-center justify-center">
             <div className="text-center space-y-4">
@@ -35,10 +39,10 @@ export default function Home() {
           </div>
         </div>
 
-        {/* DApp Panel - 25% (Right Side) */}
+        {/* DApp Panel - 25% (Right Side) - Route Outlet */}
         <div className="w-1/4 bg-background">
           <DAppPanel>
-            <WatchlistView />
+            {children}
           </DAppPanel>
         </div>
       </div>

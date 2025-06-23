@@ -1,6 +1,7 @@
 import { EventEmitter } from 'events';
 import { RaydiumPoolService } from './raydium.service';
 import { PoolReserveData } from '@/types/token';
+import { getWebSocketEndpoint } from '@/lib/constants/rpc';
 
 /**
  * Helius WebSocket Service for Real-time Pool Monitoring
@@ -74,9 +75,7 @@ export class HeliusWebSocketService extends EventEmitter {
       return;
     }
 
-    const wsUrl = this.config.network === 'mainnet'
-      ? `wss://mainnet.helius-rpc.com/?api-key=${this.config.heliusApiKey}`
-      : `wss://devnet.helius-rpc.com/?api-key=${this.config.heliusApiKey}`;
+    const wsUrl = getWebSocketEndpoint(this.config.network || 'mainnet');
 
     try {
       this.ws = new WebSocket(wsUrl);

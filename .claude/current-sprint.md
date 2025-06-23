@@ -1,118 +1,200 @@
-# Current Sprint: Meteora Position Creation UI
+# Current Sprint: Position Creation Flow
 
-**Status**: ✅ COMPLETED - Meteora DLMM Foundation & Pool Selection UI
-**Current Story**: Built solid foundation for Meteora DLMM integration with complete pool discovery, selection interface, and navigation architecture
-**Active Branch**: `feature/meteora-position-ui`
+**Status**: ✅ SPRINT COMPLETE - Position Creation UX Implementation
+**Current Story**: Transform position creation from complex dual-token inputs to intuitive SOL allocation-based flow with smart calculations and context-aware recommendations
+**Active Branch**: `feature/position-creation`
 
-## UI Development Strategy & Task Breakdown:
-- [x] Task 1: Research Meteora SDK Pool Discovery (Backend Research Specialist) **COMPLETED** ✅
-  - **Branch**: `feature/meteora-position-ui` ✅
-  - ✅ Analyze Meteora DLMM SDK capabilities and methods
-  - ✅ Identify pool discovery endpoints (dlmm-api.meteora.ag/pair/all)
-  - ✅ Understand SDK static methods for pool management
-  - ✅ Plan service extension for pool listing and search
-- [x] Task 2: Extend Meteora Service with Pool Discovery (Backend Developer) **COMPLETED** ✅
-  - **Branch**: `feature/meteora-position-ui` ✅
-  - ✅ Add getAvailablePools() method using Meteora API
-  - ✅ Implement getPoolsByToken() for token-based pool search
-  - ✅ Create getPopularPools() for high-liquidity pools
-  - ✅ Add pool metadata interfaces and types
-  - ✅ Create RPC constants file with Helius endpoints
-  - ✅ Update WebSocket service to use centralized config
-- [x] Task 3: Pool Selection Component (Frontend Developer) **COMPLETED** ✅
-  - **Branch**: `feature/meteora-position-ui` ✅
-  - ✅ Enable Meteora tab in DAppPanel (available: true)
-  - ✅ MeteoraMainLayout component as main container
-  - ✅ GroupStripList with search and group-based pool display
-  - ✅ GroupStrip components with expand/collapse functionality
-  - ✅ PoolStrip components showing individual pools with metrics
-  - ✅ Normalized Redux state management for groups and pools
-  - ✅ Service layer aggregate calculations for accurate metrics
-  - ✅ Pool selection handling for position creation flow
-- [x] Task 4: Pool Detail Navigation & Layout Groups (Full-stack Developer) **COMPLETED** ✅
-  - **Branch**: `feature/meteora-position-ui` ✅
-  - ✅ Create (dapp_panel) layout group with shared AppLayout wrapper
-  - ✅ Implement /meteora/[poolAddress] dynamic routes for pool details
-  - ✅ Fix Next.js 15 async params compatibility
-  - ✅ Replace Redux view switching with native Next.js routing
-  - ✅ Ensure all routes work within 25% panel constraint
-- [x] Task 5: Position Configuration Placeholder (UI/UX Specialist) **COMPLETED** ✅
-  - **Branch**: `feature/meteora-position-ui` ✅
-  - ✅ Create placeholder component for position configuration
-  - ✅ Reserve UI space for future implementation
-  - ✅ Display pool information (token pair)
-  - ✅ Set foundation for next sprint development
+## Sprint Objectives
+Replace token-centric position creation with user-friendly SOL allocation flow. Users think in capital allocation terms while system handles all token mathematics and optimization.
 
-## Completed Deliverables:
-1. ✅ **Pool Discovery Service** - Complete API integration and service layer
-2. ✅ **Pool Selection Interface** - Group-based browsing with search and metrics
-3. ✅ **Navigation Architecture** - Scalable routing with layout groups
-4. ✅ **UI Foundation** - Optimized layouts for position creation forms
-5. ✅ **State Management** - Redux integration for pool data
+## Business Requirements Reference
+See `.claude/business-requirements.md` for complete business logic and requirements.
 
-## Meteora DLMM Tools & Framework:
-**Primary Stack**:
-- **@meteora-ag/dlmm SDK**: Position creation and management
-- **Meteora API**: Pool discovery (dlmm-api.meteora.ag/pair/all)
-- **React Hook Form**: Form validation and state management
-- **shadcn/ui Components**: Consistent UI components
+## Task Breakdown & Implementation Strategy:
 
-**Integration Strategy**:
-- **Pool API**: Fetch available DLMM pools from Meteora API
-- **SDK Integration**: Use DLMM.create() for selected pools
-- **Position Creation**: initializePositionAndAddLiquidityByStrategy()
-- **Wallet Integration**: Handle transaction signing and confirmation
+- [x] Task 1: Position Type Selection Foundation (UI/UX Specialist) **✅ COMPLETE**
+  - **Branch**: `feature/position-creation`
+  - **Business Logic**: Implement Step 1 from business requirements
+  - ✅ Add button toggles: "Single token position" vs "Both tokens position"
+  - ✅ Conditional token selection (TokenX/TokenY) for single positions
+  - ✅ State management: `positionType`, `selectedToken`
+  - ✅ Progressive disclosure based on position type selection
+  - **Learning Goal**: Multi-step form patterns and progressive disclosure UX
 
-## Position Creation Flow:
-**User Journey**:
-1. **Select Pool** → Browse/search available DLMM pools
-2. **Configure Position** → Set amounts, range, strategy
-3. **Review & Confirm** → Validate inputs and show preview
-4. **Connect Wallet** → Ensure wallet connection and balance
-5. **Create Position** → Execute transaction and show results
+- [x] Task 2: SOL Allocation Interface (Frontend Developer) **✅ COMPLETE**
+  - **Branch**: `feature/position-creation`
+  - **Business Logic**: Implement Step 2 from business requirements
+  - ✅ Replace dual token inputs with single "Total SOL to allocate" field
+  - ✅ SOL balance display and validation
+  - ✅ Percentage quick buttons [25%] [50%] [75%] [MAX]
+  - ✅ State management: `totalSolAllocation`, `availableSolBalance`
+  - **Learning Goal**: Capital allocation UX and financial input patterns
 
-**Technical Flow**:
+- [x] Task 3: Smart Token Calculations & Preview (Full-Stack Developer) **✅ COMPLETE**
+  - **Branch**: `feature/position-creation`
+  - **Business Logic**: Implement Step 3 from business requirements
+  - ✅ Real-time token amount calculations based on position type
+  - ✅ Single TokenX: Calculate `tokenXNeeded = totalSol / currentPrice`
+  - ✅ Single TokenY: Direct SOL usage, no conversion needed
+  - ✅ Both tokens: Optimal ratio splitting based on strategy and range
+  - ✅ Display previews: "Will buy ~X.XX TokenX" or "Will use X SOL + Y SOL"
+  - ✅ State management: `calculatedTokenXAmount`, `calculatedTokenYAmount`, `requiresSwap`
+  - **Learning Goal**: Financial calculations and real-time preview patterns
+
+- [x] Task 4: Context-Aware Strategy & Range Selection (UX Specialist) **✅ COMPLETE**
+  - **Branch**: `feature/position-creation`
+  - **Business Logic**: Implement Steps 4-6 from business requirements
+  - ✅ Enhanced strategy selection with recommendations and visual indicators
+  - ✅ BrushBarChart visual bin representation for range selection
+  - ✅ Asymmetric range defaults for single token positions
+  - ✅ Final transaction preview with edit/confirm functionality
+  - ✅ Complete state management integration
+  - **Learning Goal**: Context-aware UI and complex form state orchestration
+
+## Position Creation Flow Architecture
+
+### User Journey
+1. **Select Position Type** → Single token (directional) or Both tokens (traditional LP)
+2. **Choose SOL Amount** → Capital allocation with balance validation
+3. **Preview Calculations** → See token amounts and swap requirements
+4. **Configure Strategy/Range** → Context-aware recommendations
+5. **Confirm Preview** → Final transaction summary and execution
+
+### Technical Flow
 ```
-Pool Selection → DLMM.create() → Position Config → 
-initializePositionAndAddLiquidityByStrategy() → Transaction Success
+Position Type Selection → SOL Allocation → Token Calculations → 
+Strategy/Range Configuration → Transaction Preview → Ready for Execution
 ```
 
-## Success Criteria:
-- [x] **Meteora SDK Research** - Complete understanding of available methods ✅
-- [x] **Pool Discovery Service** - Fetch and display available DLMM pools ✅
-- [x] **Pool Selection UI** - Intuitive pool browsing and selection ✅
-- [x] **Pool Detail Navigation** - Scalable routing with /meteora/poolAddress ✅
-- [x] **Foundation Complete** - Ready for position creation implementation ✅
+## State Management Architecture
 
-## Next Sprint: SOL-Based Position Creation UX
+### Core State Structure
+```typescript
+interface PositionCreationState {
+  // Step 1: Position Type
+  positionType: 'single' | 'both'
+  selectedToken: 'tokenX' | 'tokenY' | null
+  
+  // Step 2: SOL Allocation
+  totalSolAllocation: number
+  availableSolBalance: number
+  
+  // Step 3: Calculated Amounts
+  calculatedTokenXAmount: number
+  calculatedTokenYAmount: number
+  requiresSwap: boolean
+  swapAmount: number
+  
+  // Step 4: Strategy & Range
+  strategy: 'spot' | 'curve' | 'bidask'
+  recommendedStrategy: string
+  rangeMin: number
+  rangeMax: number
+  rangeType: 'symmetric' | 'asymmetric-above' | 'asymmetric-below'
+  
+  // Final Preview
+  transactionPreview: {
+    solAllocated: number
+    tokensToAcquire: { tokenX: number, tokenY: number }
+    positionRange: { min: number, max: number }
+    transactionCount: number
+    estimatedGasFees: number
+  }
+}
+```
+
+## Key Technical Challenges
+
+### 1. Real-Time Calculations
+- Immediate updates as user adjusts SOL allocation
+- Complex ratio splitting for "both tokens" positions
+- Price impact calculations for large allocations
+
+### 2. Context-Aware UI
+- Dynamic strategy recommendations based on position type
+- Asymmetric range configuration for single token positions
+- Progressive form validation and error states
+
+### 3. State Orchestration
+- Multiple interdependent form steps
+- Bidirectional editing capabilities (user can go back and modify)
+- Consistent state management across complex calculations
+
+## Success Criteria
+
+### User Experience Goals
+- [x] **Foundation Ready** - Sprint 1 infrastructure complete ✅
+- [x] **Intuitive Position Types** - Clear single vs both token selection ✅
+- [x] **SOL-First Thinking** - Users focus on capital allocation, not token math ✅
+- [x] **Smart Previews** - Clear display of what tokens will be acquired ✅
+- [x] **Context-Aware Recommendations** - Strategy and range suggestions ✅
+- [x] **Confidence Building** - Complete transaction preview before execution ✅
+
+### Technical Goals
+- [x] **Progressive Form Flow** - Step-by-step with validation and navigation ✅
+- [x] **Real-Time Calculations** - Immediate feedback on all user inputs ✅
+- [x] **State Management** - Robust handling of complex interdependent form state ✅
+- [x] **Component Architecture** - Reusable, testable form components ✅
+- [x] **Integration Ready** - Clean handoff point for transaction execution ✅
+
+## Integration Strategy
+
+### Current Sprint Scope (Form Flow Only)
+- ✅ **Position type selection and token choice**
+- ✅ **SOL allocation with balance integration**
+- ✅ **Smart token amount calculations and previews**
+- ✅ **Enhanced strategy selection with recommendations**
+- ✅ **Asymmetric range configuration for single positions**
+- ✅ **Complete transaction preview ready for execution**
+
+### Out of Scope (Future Sprints)
+- ❌ **Actual Jupiter swap execution**
+- ❌ **Real transaction signing and submission**
+- ❌ **Wallet connection beyond balance display**
+- ❌ **Position creation via Meteora SDK**
+- ❌ **Error handling for failed transactions**
+
+## Component Architecture
+
+### New Components to Build
+- **PositionTypeSelector**: Radio button selection with conditional token choice
+- **SolAllocationInput**: SOL input with balance and percentage buttons
+- **TokenPreviewCard**: Display calculated token amounts and swap requirements
+- **ContextAwareStrategySelector**: Enhanced strategy selection with recommendations
+- **AsymmetricRangeSelector**: Range configuration for single token positions
+- **TransactionPreviewCard**: Final confirmation summary
+
+### Integration Points
+- **PoolDetailView**: Replace current PositionConfigForm placeholder
+- **Meteora Service**: Use existing pool data for price calculations
+- **State Management**: New Redux slice for position creation state
+
+## Development Approach
+
+### Task 1 Focus: Position Type Foundation
+- Create solid foundation with position type selection
+- Implement conditional token selection for single positions
+- Set up core state management structure
+- Build progressive disclosure patterns
+
+### Validation Strategy
+- Step-by-step validation preventing invalid states
+- Real-time feedback on user inputs
+- Clear error messaging and recovery paths
+- Comprehensive edge case handling
+
+### Testing Strategy
+- Unit tests for calculation logic
+- Component testing for form interactions
+- Integration testing for state management
+- User acceptance testing for complete flow
+
+## Next Session Instructions
 **Role to assume**: UI/UX Specialist
-**Task**: Design and implement intuitive SOL allocation-based position creation flow
-**Learning goal**: User-centered financial interfaces with smart token calculations and swap integration
+**Task**: Implement position type selection as the foundation for position creation
+**Learning goal**: Progressive form design and state management patterns for complex financial interfaces
+**Reference**: Start with Step 1 from business-requirements.md
 
-## UI Component Architecture:
-**Component Structure**:
-- **MeteoraMainLayout**: Main container component (supports DLMM, future DAMM)
-- **PoolStripList**: Pool browsing with search and strip-based display
-- **PoolStrip**: Individual pool display (token pair, price, liquidity, select)
-- **PoolSearchBar**: Search and filter controls
-- **PositionForm**: Amount and configuration inputs (Task 4)
-- **RangeSelector**: Visual range configuration tool (Task 4)
-- **TransactionFlow**: Wallet integration and transaction management (Task 5)
+---
 
-**Task 3 Focus - Pool Selection**:
-- Strip-based design for narrow 25% panel width
-- Horizontal strips showing: token pair, price, liquidity, bin step
-- Search functionality using pool discovery methods
-- Integration with DAppPanel Meteora tab
-
-**State Management**:
-- Position creation wizard state (multi-step form)
-- Selected pool and configuration data
-- Transaction status and wallet connection
-- Form validation and error states
-
-## Technical Architecture Notes:
-**Data Flow**: Pool API → Pool Selection → Position Config → SDK Integration → Transaction → Success
-**Error Strategy**: Validation at each step → Clear error messages → Retry mechanisms
-**Performance**: Efficient pool loading → Optimistic UI updates → Minimal re-renders
-**Accessibility**: Keyboard navigation → Screen reader support → Clear visual feedback
+*This sprint transforms position creation into an intuitive, user-centered experience while maintaining all the power and flexibility of the underlying Meteora DLMM system.*

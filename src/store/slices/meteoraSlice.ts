@@ -198,8 +198,13 @@ export const selectMeteoraSearchQuery = (state: { meteora: MeteoraState }) =>
 export const selectExpandedGroups = (state: { meteora: MeteoraState }) => 
     state.meteora.expandedGroups;
 
-export const isGroupExpanded = (state: { meteora: MeteoraState }, groupName: string) => 
-    state.meteora.expandedGroups.includes(groupName);
+export const isGroupExpanded = createSelector(
+    [
+        (state: { meteora: MeteoraState }) => state.meteora.expandedGroups,
+        (_state: { meteora: MeteoraState }, groupName: string) => groupName
+    ],
+    (expandedGroups, groupName) => expandedGroups.includes(groupName)
+);
 
 // View management selectors
 export const selectCurrentView = (state: { meteora: MeteoraState }) => 

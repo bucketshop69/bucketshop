@@ -3,9 +3,9 @@ import DLMM, { StrategyType } from '@meteora-ag/dlmm';
 import { BN } from "@coral-xyz/anchor";
 import { DEFAULT_RPC_ENDPOINT } from '@/lib/constants/rpc';
 import { DLMM_CONFIG } from './constants';
-import { 
-  executeTransaction, 
-  executeTransactions, 
+import {
+  executeTransaction,
+  executeTransactions,
   handleError,
   calculatePercentageBasedRange,
   calculateBinBasedRange,

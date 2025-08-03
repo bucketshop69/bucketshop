@@ -1,9 +1,11 @@
+import { TradingChart } from '@/components/TradingChart';
+
 export default function Page() {
   return (
     <div className="h-screen flex">
       {/* Left Section - 70% */}
       <div className="w-[70%] bg-gray-100 border-r">
-        <div className="p-4">Left Panel (70%)</div>
+        <TradingChart />
       </div>
       
       {/* Right Section - 30% */}

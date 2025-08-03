@@ -34,4 +34,13 @@ You can check out [the Next.js GitHub repository](https://github.com/vercel/next
 The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
 
 Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# bucketshop
+# BucketShop - Crypto Trading Dashboard
+
+**Live Demo:** https://bucketshop-yx78.vercel.app/
+
+Unified Solana trading dashboard with clean 70/30 layout for seamless crypto trading experience.
+
+## Features
+- Clean 70/30 split layout (Charts/Actions)
+- Built with Next.js 15 + React 19 + TailwindCSS
+- Minimal dependencies for fast performance

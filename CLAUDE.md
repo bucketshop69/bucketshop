@@ -17,32 +17,14 @@ This is a Next.js 15 application using the App Router with TypeScript and Tailwi
 - **Next.js 15** with App Router and React 19
 - **TypeScript** with strict configuration
 - **Tailwind CSS v4** for styling
-- **shadcn/ui** components with Radix UI primitives
-- **SQLite** database with better-sqlite3
-- **next-themes** for dark/light mode support
+- **Lucide React** for icons
 
 ### Project Structure
 - `src/app/` - Next.js App Router pages and layouts
 - `src/components/` - Reusable React components
-- `src/components/ui/` - shadcn/ui components
-- `src/lib/db/` - Database configuration and schemas
-- `src/lib/services/` - Business logic services
-- `src/hooks/` - Custom React hooks
-- `src/store/` - State management
+- `src/features/` - Feature-based modules
+- `src/lib/` - Utilities and services
 - `src/types/` - TypeScript type definitions
-
-### Database
-- Uses SQLite with better-sqlite3 driver
-- Database file: `src/lib/db/watchlist.db`
-- Database connection configured in `src/lib/db/db.ts`
-- Schemas defined in `src/lib/db/schemas/`
-
-### UI Components
-- Built with shadcn/ui component library
-- Configuration in `components.json`
-- Theme support with next-themes
-- Uses Lucide React icons
-- Tailwind CSS with CSS variables for theming
 
 ### Path Aliases
 - `@/*` maps to `./src/*`

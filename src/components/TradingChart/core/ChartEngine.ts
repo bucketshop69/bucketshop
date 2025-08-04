@@ -180,7 +180,14 @@ export class ChartEngine {
       close: candle.close,
     };
 
+    console.log('ChartEngine.updateCandle called with:', {
+      original: candle,
+      converted: chartCandle,
+      seriesExists: !!this.candlestickSeries
+    });
+
     this.candlestickSeries.update(chartCandle);
+    console.log('ChartEngine.updateCandle completed');
   }
 
   /**

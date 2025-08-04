@@ -39,6 +39,10 @@ export function ChartContainer({
   const chartEngineRef = useRef<ChartEngine>(new ChartEngine());
   const [isMounted, setIsMounted] = useState(false);
   const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
+  
+  // Track initial load vs real-time updates
+  const [isInitialLoadComplete, setIsInitialLoadComplete] = useState(false);
+  const previousCandlesLengthRef = useRef(0);
 
   // Chart store state
   const loadingState = useChartStore(selectLoadingState);
@@ -141,31 +145,75 @@ export function ChartContainer({
     };
   }, [isMounted, dimensions.width, dimensions.height]);
 
-  // Update chart data when candles change
+  // Update chart data when candles change - distinguish initial load vs real-time updates
   useEffect(() => {
     if (!chartEngineRef.current.isInitialized() || candles.length === 0) return;
 
     try {
-      // Convert to chart format
-      const chartData = candles.map(candle => ({
-        time: candle.time,
-        open: candle.open,
-        high: candle.high,
-        low: candle.low,
-        close: candle.close,
-      }));
+      const currentCandleCount = candles.length;
+      const previousCandleCount = previousCandlesLengthRef.current;
+      
+      // Initial load: set all data and fit content
+      if (!isInitialLoadComplete || currentCandleCount !== previousCandleCount + 1) {
+        console.log('Initial load or bulk update:', { currentCandleCount, previousCandleCount });
+        
+        // Convert all candles to chart format
+        const chartData = candles.map(candle => ({
+          time: candle.time,
+          open: candle.open,
+          high: candle.high,
+          low: candle.low,
+          close: candle.close,
+        }));
 
-      chartEngineRef.current.setData(chartData);
+        chartEngineRef.current.setData(chartData);
 
-      // Fit content after initial load
-      if (loadingState === 'success') {
-        setTimeout(() => chartEngineRef.current.fitContent(), 100);
+        // Fit content only on initial load
+        if (loadingState === 'success' && !isInitialLoadComplete) {
+          setTimeout(() => {
+            chartEngineRef.current.fitContent();
+            setIsInitialLoadComplete(true);
+          }, 100);
+        }
+      } 
+      // Real-time update: update only the latest candle
+      else if (isInitialLoadComplete && currentCandleCount === previousCandleCount + 1) {
+        console.log('Real-time update: updating latest candle');
+        
+        const latestCandle = candles[candles.length - 1];
+        const candleData = {
+          time: latestCandle.time,
+          open: latestCandle.open,
+          high: latestCandle.high,
+          low: latestCandle.low,
+          close: latestCandle.close,
+        };
+        
+        chartEngineRef.current.updateCandle(candleData);
       }
+      // Same length but data changed: update latest candle (price update)
+      else if (isInitialLoadComplete && currentCandleCount === previousCandleCount) {
+        console.log('Price update: updating current candle');
+        
+        const latestCandle = candles[candles.length - 1];
+        const candleData = {
+          time: latestCandle.time,
+          open: latestCandle.open,
+          high: latestCandle.high,
+          low: latestCandle.low,
+          close: latestCandle.close,
+        };
+        
+        chartEngineRef.current.updateCandle(candleData);
+      }
+      
+      // Update ref for next comparison
+      previousCandlesLengthRef.current = currentCandleCount;
 
     } catch (error) {
       console.error('Failed to update chart data:', error);
     }
-  }, [candles, loadingState]);
+  }, [candles, loadingState, isInitialLoadComplete]);
 
   // Update chart theme
   useEffect(() => {

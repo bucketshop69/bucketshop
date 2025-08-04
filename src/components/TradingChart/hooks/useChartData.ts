@@ -199,8 +199,8 @@ export function useChartData() {
 
   // Cleanup on unmount
   useEffect(() => {
+    const buffer = candleBufferRef.current;
     return () => {
-      const buffer = candleBufferRef.current;
       if (buffer) {
         buffer.clear();
       }

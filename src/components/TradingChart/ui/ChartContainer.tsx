@@ -2,13 +2,17 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ChartEngine, ChartConfiguration } from '../core/ChartEngine';
-import { useChartStore, selectLoadingState, selectError, selectCandles, selectCurrentPrice, selectConnectionState, selectMetrics } from '../data/chartStore';
+import {
+  useChartStore, selectLoadingState, selectError,
+  selectCandles, selectCurrentPrice, selectConnectionState, selectMetrics
+} from '../data/chartStore';
 import { useChartData } from '../hooks/useChartData';
+import { useRealTime } from '../hooks/useRealTime';
+import { useMarketStore, selectSelectedSymbol, useMarketInitialization } from '../data/marketStore';
 import { ChartOverlays } from './ChartOverlays';
 
 export interface ChartContainerProps {
   className?: string;
-  height?: number;
   theme?: 'light' | 'dark';
   onPriceChange?: (price: number) => void;
 }
@@ -26,7 +30,6 @@ export interface ChartContainerProps {
  */
 export function ChartContainer({
   className = '',
-  height = 500,
   theme = 'dark',
   onPriceChange
 }: ChartContainerProps) {
@@ -34,6 +37,7 @@ export function ChartContainer({
   const chartContainerRef = useRef<HTMLDivElement>(null);
   const chartEngineRef = useRef<ChartEngine>(new ChartEngine());
   const [isMounted, setIsMounted] = useState(false);
+  const [dimensions, setDimensions] = useState({ width: 0, height: 0 });
 
   // Chart store state
   const loadingState = useChartStore(selectLoadingState);
@@ -44,19 +48,31 @@ export function ChartContainer({
   const metrics = useChartStore(selectMetrics);
 
   // Chart store actions
-  const { setTheme, clearError, setConnectionState } = useChartStore();
+  const { setTheme, clearError, setSymbol } = useChartStore();
+
+  // Market store state
+  const selectedSymbol = useMarketStore(selectSelectedSymbol);
 
   // Chart data management
   const {
     retryLoad,
   } = useChartData();
 
+  // Real-time WebSocket integration
+  const {
+    reconnect,
+    getConnectionStats,
+  } = useRealTime();
+
+  // Initialize markets on mount
+  useMarketInitialization();
+
   // Ensure client-side only rendering
   useEffect(() => {
     setIsMounted(true);
   }, []);
 
-  // Initialize chart engine
+  // Initialize chart engine when mounted
   useEffect(() => {
     if (!isMounted || !chartContainerRef.current) return;
 
@@ -65,19 +81,21 @@ export function ChartContainer({
         const container = chartContainerRef.current;
         if (!container) return;
 
-        // Calculate dimensions
-        const containerWidth = container.clientWidth || 800;
-        const containerHeight = height;
+        // Get initial dimensions
+        const { clientWidth, clientHeight } = container;
+        const width = clientWidth || 800;
+        const height = clientHeight || 500;
 
         const config: ChartConfiguration = {
-          width: containerWidth,
-          height: containerHeight,
+          width,
+          height,
           theme,
         };
 
         console.log('Initializing chart with config:', config);
 
         await chartEngineRef.current.initialize(container, config);
+        setDimensions({ width, height });
 
         console.log('Chart engine initialized successfully');
 
@@ -89,13 +107,38 @@ export function ChartContainer({
     initializeChart();
 
     // Cleanup on unmount
+    const chartEngine = chartEngineRef.current;
     return () => {
-      const chartEngine = chartEngineRef.current;
       if (chartEngine) {
         chartEngine.destroy();
       }
     };
-  }, [isMounted, height, theme]);
+  }, [isMounted, theme]);
+
+  // ResizeObserver for dynamic sizing after initialization
+  useEffect(() => {
+    if (!chartContainerRef.current || !chartEngineRef.current.isInitialized()) return;
+
+    const resizeObserver = new ResizeObserver(entries => {
+      const entry = entries[0];
+      if (!entry) return;
+
+      const { width, height } = entry.contentRect;
+
+      // Only update if dimensions actually changed and are valid
+      if (width > 0 && height > 0 && (width !== dimensions.width || height !== dimensions.height)) {
+        console.log('Resizing chart to:', { width, height });
+        chartEngineRef.current.resize(width, height);
+        setDimensions({ width, height });
+      }
+    });
+
+    resizeObserver.observe(chartContainerRef.current);
+
+    return () => {
+      resizeObserver.disconnect();
+    };
+  }, [isMounted, dimensions.width, dimensions.height]);
 
   // Update chart data when candles change
   useEffect(() => {
@@ -138,12 +181,21 @@ export function ChartContainer({
     }
   }, [currentPrice, onPriceChange]);
 
+  // Sync chart store symbol with market store
+  useEffect(() => {
+    if (selectedSymbol) {
+      setSymbol(selectedSymbol);
+    }
+  }, [selectedSymbol, setSymbol]);
+
   // Chart header with current price and status
   const renderHeader = () => (
     <div className="p-4 border-b border-gray-200">
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4">
-          <h2 className="text-gray-800 text-xl font-bold">BTC-PERP</h2>
+          <h2 className="text-gray-800 text-xl font-bold">
+            {selectedSymbol || 'Loading...'}
+          </h2>
           {currentPrice > 0 && (
             <div className="text-gray-800 text-lg font-mono">
               ${currentPrice.toLocaleString(undefined, {
@@ -180,22 +232,6 @@ export function ChartContainer({
     </div>
   );
 
-  // Debug info footer (development only)
-  const renderDebugInfo = () => {
-    if (process.env.NODE_ENV !== 'development') return null;
-
-    return (
-      <div className="p-2 border-t border-gray-200 text-xs text-gray-500">
-        <div className="flex justify-between">
-          <span>Market: BTC-PERP (perp_1)</span>
-          <span>WebSocket: {connectionState}</span>
-          <span>Quality: {metrics.dataQuality.toFixed(1)}%</span>
-          <span>Data: {metrics.candleCount} candles</span>
-        </div>
-      </div>
-    );
-  };
-
   // Handle retry actions
   const handleRetry = () => {
     clearError();
@@ -203,8 +239,8 @@ export function ChartContainer({
   };
 
   const handleReconnect = () => {
-    setConnectionState('connecting');
-    // WebSocket reconnection will be handled by WebSocketManager in Task 2
+    console.log('Manual reconnect requested');
+    reconnect();
   };
 
   if (!isMounted) {
@@ -224,8 +260,7 @@ export function ChartContainer({
       <div className="flex-1 relative">
         <div
           ref={chartContainerRef}
-          className="absolute inset-0"
-          style={{ minHeight: '400px' }}
+          className="h-[calc(100vh-80px)] w-full"
         />
 
         {/* Chart Overlays */}
@@ -242,9 +277,6 @@ export function ChartContainer({
           onReconnect={handleReconnect}
         />
       </div>
-
-      {/* Debug Info */}
-      {renderDebugInfo()}
     </div>
   );
 }

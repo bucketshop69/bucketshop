@@ -104,7 +104,7 @@ const initialState: ChartState = {
   lastUpdateTime: 0,
   
   // Chart configuration
-  symbol: 'BTC-PERP',
+  symbol: '', // Will be set by market store
   timeframe: '1h',
   autoRefresh: true,
   

@@ -40,11 +40,6 @@ export class ChartEngine {
   private chart: IChartApi | null = null;
   private candlestickSeries: ISeriesApi<'Candlestick'> | null = null;
   private container: HTMLElement | null = null;
-  private resizeObserver: ResizeObserver | null = null;
-
-  constructor() {
-    this.handleResize = this.handleResize.bind(this);
-  }
 
   /**
    * Initialize the chart with a container element
@@ -93,9 +88,6 @@ export class ChartEngine {
     };
 
     this.candlestickSeries = this.chart.addSeries(CandlestickSeries, seriesOptions);
-
-    // Setup responsive behavior
-    this.setupResizeObserver();
   }
 
   /**
@@ -163,26 +155,16 @@ export class ChartEngine {
     };
   }
 
-  /**
-   * Setup resize observer for responsive behavior
-   */
-  private setupResizeObserver(): void {
-    if (!this.container || !this.chart) return;
-
-    this.resizeObserver = new ResizeObserver(this.handleResize);
-    this.resizeObserver.observe(this.container);
-  }
 
   /**
-   * Handle container resize
+   * Resize chart to specific dimensions
    */
-  private handleResize(): void {
-    if (!this.container || !this.chart) return;
+  resize(width: number, height: number): void {
+    if (!this.chart) return;
 
-    const { clientWidth, clientHeight } = this.container;
     this.chart.applyOptions({
-      width: clientWidth,
-      height: clientHeight,
+      width,
+      height,
     });
   }
 
@@ -208,11 +190,6 @@ export class ChartEngine {
    * Clean up chart resources
    */
   destroy(): void {
-    if (this.resizeObserver) {
-      this.resizeObserver.disconnect();
-      this.resizeObserver = null;
-    }
-
     if (this.chart) {
       this.chart.remove();
       this.chart = null;

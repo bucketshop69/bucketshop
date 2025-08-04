@@ -14,9 +14,8 @@ import { ChartContainer } from './TradingChart/ui/ChartContainer';
 export function TradingChart() {
   return (
     <ChartContainer
-      height={500}
       theme="dark"
-      className=""
+      className="w-full h-full"
     />
   );
 }

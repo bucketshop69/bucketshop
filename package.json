@@ -9,6 +9,7 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@coral-xyz/anchor": "^0.28.0",
     "@drift-labs/sdk": "^2.129.0",
     "lightweight-charts": "^5.0.8",
     "lucide-react": "^0.513.0",

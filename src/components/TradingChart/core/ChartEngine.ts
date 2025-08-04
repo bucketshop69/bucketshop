@@ -9,6 +9,7 @@ import {
   CandlestickSeriesOptions,
   Time 
 } from 'lightweight-charts';
+import { BUCKETSHOP_ELITE_THEME } from './theme';
 
 export interface ChartConfiguration {
   width: number;
@@ -51,40 +52,93 @@ export class ChartEngine {
 
     this.container = container;
 
-    // Create chart with configuration
+    // Create chart with BucketShop Elite theme
+    const isDark = config.theme === 'dark';
+    const theme = BUCKETSHOP_ELITE_THEME;
+    
     const chartOptions: DeepPartial<ChartOptions> = {
       width: config.width,
       height: config.height,
       layout: {
-        background: { color: config.theme === 'dark' ? '#1a1a1a' : '#ffffff' },
-        textColor: config.theme === 'dark' ? '#ffffff' : '#333333',
+        background: { 
+          color: isDark ? theme.background.primary : '#ffffff' 
+        },
+        textColor: isDark ? theme.text.primary : '#333333',
+        fontSize: 12,
+        fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       },
       grid: {
-        vertLines: { color: config.theme === 'dark' ? '#2a2a2a' : '#f0f0f0' },
-        horzLines: { color: config.theme === 'dark' ? '#2a2a2a' : '#f0f0f0' },
+        vertLines: { 
+          color: isDark ? theme.grid.primary : '#f0f0f0',
+          style: 0, // LineStyle.Solid
+        },
+        horzLines: { 
+          color: isDark ? theme.grid.primary : '#f0f0f0',
+          style: 0, // LineStyle.Solid
+        },
       },
       timeScale: {
         timeVisible: true,
         secondsVisible: false,
-        borderColor: config.theme === 'dark' ? '#2a2a2a' : '#cccccc',
+        borderColor: isDark ? theme.grid.secondary : '#cccccc',
+        rightOffset: 12,
+        barSpacing: 8,
+        minBarSpacing: 0.5,
       },
       rightPriceScale: {
-        borderColor: config.theme === 'dark' ? '#2a2a2a' : '#cccccc',
+        borderColor: isDark ? theme.grid.secondary : '#cccccc',
+        textColor: isDark ? theme.text.secondary : '#666666',
+        entireTextOnly: false,
+        scaleMargins: {
+          top: 0.1,
+          bottom: 0.1,
+        },
+      },
+      leftPriceScale: {
+        visible: false,
       },
       crosshair: {
         mode: 1, // CrosshairMode.Normal
+        vertLine: {
+          color: isDark ? theme.grid.accent : '#cccccc',
+          width: 1,
+          style: 2, // LineStyle.Dashed
+          labelBackgroundColor: isDark ? theme.accent.primary : '#4f46e5',
+        },
+        horzLine: {
+          color: isDark ? theme.grid.accent : '#cccccc',
+          width: 1,
+          style: 2, // LineStyle.Dashed
+          labelBackgroundColor: isDark ? theme.accent.primary : '#4f46e5',
+        },
+      },
+      handleScroll: {
+        mouseWheel: true,
+        pressedMouseMove: true,
+        horzTouchDrag: true,
+        vertTouchDrag: true,
+      },
+      handleScale: {
+        axisPressedMouseMove: true,
+        mouseWheel: true,
+        pinch: true,
       },
     };
 
     this.chart = createChart(container, chartOptions);
 
-    // Create candlestick series
+    // Create candlestick series with elite theme colors
     const seriesOptions: DeepPartial<CandlestickSeriesOptions> = {
-      upColor: '#26a69a',
-      downColor: '#ef5350',
+      upColor: isDark ? theme.trading.bull : '#26a69a',
+      downColor: isDark ? theme.trading.bear : '#ef5350',
       borderVisible: false,
-      wickUpColor: '#26a69a',
-      wickDownColor: '#ef5350',
+      wickUpColor: isDark ? theme.trading.bullWick : '#26a69a',
+      wickDownColor: isDark ? theme.trading.bearWick : '#ef5350',
+      priceFormat: {
+        type: 'price',
+        precision: 2,
+        minMove: 0.01,
+      },
     };
 
     this.candlestickSeries = this.chart.addSeries(CandlestickSeries, seriesOptions);
@@ -169,21 +223,57 @@ export class ChartEngine {
   }
 
   /**
-   * Update chart theme
+   * Update chart theme with BucketShop Elite styling
    */
-  updateTheme(theme: 'light' | 'dark'): void {
+  updateTheme(themeMode: 'light' | 'dark'): void {
     if (!this.chart) return;
+
+    const isDark = themeMode === 'dark';
+    const theme = BUCKETSHOP_ELITE_THEME;
 
     this.chart.applyOptions({
       layout: {
-        background: { color: theme === 'dark' ? '#1a1a1a' : '#ffffff' },
-        textColor: theme === 'dark' ? '#ffffff' : '#333333',
+        background: { 
+          color: isDark ? theme.background.primary : '#ffffff' 
+        },
+        textColor: isDark ? theme.text.primary : '#333333',
       },
       grid: {
-        vertLines: { color: theme === 'dark' ? '#2a2a2a' : '#f0f0f0' },
-        horzLines: { color: theme === 'dark' ? '#2a2a2a' : '#f0f0f0' },
+        vertLines: { 
+          color: isDark ? theme.grid.primary : '#f0f0f0',
+        },
+        horzLines: { 
+          color: isDark ? theme.grid.primary : '#f0f0f0',
+        },
+      },
+      timeScale: {
+        borderColor: isDark ? theme.grid.secondary : '#cccccc',
+      },
+      rightPriceScale: {
+        borderColor: isDark ? theme.grid.secondary : '#cccccc',
+        textColor: isDark ? theme.text.secondary : '#666666',
+      },
+      crosshair: {
+        vertLine: {
+          color: isDark ? theme.grid.accent : '#cccccc',
+          labelBackgroundColor: isDark ? theme.accent.primary : '#4f46e5',
+        },
+        horzLine: {
+          color: isDark ? theme.grid.accent : '#cccccc',
+          labelBackgroundColor: isDark ? theme.accent.primary : '#4f46e5',
+        },
       },
     });
+
+    // Update candlestick series colors
+    if (this.candlestickSeries) {
+      this.candlestickSeries.applyOptions({
+        upColor: isDark ? theme.trading.bull : '#26a69a',
+        downColor: isDark ? theme.trading.bear : '#ef5350',
+        wickUpColor: isDark ? theme.trading.bullWick : '#26a69a',
+        wickDownColor: isDark ? theme.trading.bearWick : '#ef5350',
+      });
+    }
   }
 
   /**

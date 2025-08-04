@@ -2,6 +2,7 @@
 
 import { useEffect, useRef, useState } from 'react';
 import { ChartEngine, ChartConfiguration } from '../core/ChartEngine';
+import { BUCKETSHOP_ELITE_THEME, TYPOGRAPHY, SPACING } from '../core/theme';
 import {
   useChartStore, selectLoadingState, selectError,
   selectCandles, selectCurrentPrice, selectConnectionState, selectMetrics
@@ -188,49 +189,99 @@ export function ChartContainer({
     }
   }, [selectedSymbol, setSymbol]);
 
-  // Chart header with current price and status
-  const renderHeader = () => (
-    <div className="p-4 border-b border-gray-200">
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-4">
-          <h2 className="text-gray-800 text-xl font-bold">
-            {selectedSymbol || 'Loading...'}
-          </h2>
-          {currentPrice > 0 && (
-            <div className="text-gray-800 text-lg font-mono">
-              ${currentPrice.toLocaleString(undefined, {
-                minimumFractionDigits: 2,
-                maximumFractionDigits: 2
-              })}
-            </div>
-          )}
-        </div>
-
-        <div className="flex items-center gap-4">
-          {/* Connection status */}
-          <div className="flex items-center gap-2">
-            <div className={`w-2 h-2 rounded-full ${connectionState === 'connected' ? 'bg-green-500' :
-              connectionState === 'connecting' ? 'bg-yellow-500 animate-pulse' :
-                'bg-red-500'
-              }`} />
-            <span className="text-sm text-gray-600">
-              {connectionState === 'connected' ? 'Live' :
-                connectionState === 'connecting' ? 'Connecting' :
-                  'Offline'}
-            </span>
+  // Chart header with current price and status - Elite Dark Theme
+  const renderHeader = () => {
+    const isDark = theme === 'dark';
+    const colors = BUCKETSHOP_ELITE_THEME;
+    
+    return (
+      <div 
+        className="px-6 py-4 border-b transition-colors duration-200"
+        style={{
+          backgroundColor: isDark ? colors.background.secondary : '#ffffff',
+          borderColor: isDark ? colors.grid.secondary : '#e5e7eb',
+        }}
+      >
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-6">
+            {/* Symbol */}
+            <h2 
+              className="text-2xl font-bold tracking-tight transition-colors duration-200"
+              style={{
+                color: isDark ? colors.text.primary : '#1f2937',
+                fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
+              }}
+            >
+              {selectedSymbol || 'Loading...'}
+            </h2>
+            
+            {/* Current Price */}
+            {currentPrice > 0 && (
+              <div 
+                className="text-xl font-mono font-semibold transition-colors duration-200"
+                style={{
+                  color: isDark ? colors.accent.primary : '#4f46e5',
+                }}
+              >
+                ${currentPrice.toLocaleString(undefined, {
+                  minimumFractionDigits: 2,
+                  maximumFractionDigits: 2
+                })}
+              </div>
+            )}
           </div>
 
-          {/* Timeframe */}
-          <span className="text-gray-600 text-sm">1H</span>
+          <div className="flex items-center gap-6">
+            {/* Connection status */}
+            <div className="flex items-center gap-3">
+              <div 
+                className={`w-2 h-2 rounded-full transition-all duration-300 ${
+                  connectionState === 'connecting' ? 'animate-pulse' : ''
+                }`}
+                style={{
+                  backgroundColor: connectionState === 'connected' ? colors.status.connected :
+                    connectionState === 'connecting' ? colors.status.connecting :
+                    colors.status.disconnected
+                }}
+              />
+              <span 
+                className="text-sm font-medium transition-colors duration-200"
+                style={{
+                  color: isDark ? colors.text.secondary : '#6b7280',
+                }}
+              >
+                {connectionState === 'connected' ? 'Live' :
+                  connectionState === 'connecting' ? 'Connecting' :
+                    'Offline'}
+              </span>
+            </div>
 
-          {/* Candle count */}
-          <span className="text-gray-600 text-sm">
-            {metrics.candleCount.toLocaleString()} candles
-          </span>
+            {/* Timeframe Badge */}
+            <div 
+              className="px-3 py-1 rounded-lg text-sm font-medium transition-colors duration-200"
+              style={{
+                backgroundColor: isDark ? colors.accent.primary + '20' : '#f3f4f6',
+                color: isDark ? colors.accent.primary : '#374151',
+                border: `1px solid ${isDark ? colors.accent.primary + '40' : '#d1d5db'}`,
+              }}
+            >
+              1H
+            </div>
+
+            {/* Candle count */}
+            <span 
+              className="text-sm font-medium transition-colors duration-200"
+              style={{
+                color: isDark ? colors.text.tertiary : '#9ca3af',
+              }}
+            >
+              {metrics.candleCount.toLocaleString()} candles
+            </span>
+          </div>
         </div>
       </div>
-    </div>
-  );
+    );
+  };
 
   // Handle retry actions
   const handleRetry = () => {
@@ -244,15 +295,38 @@ export function ChartContainer({
   };
 
   if (!isMounted) {
+    const isDark = theme === 'dark';
+    const colors = BUCKETSHOP_ELITE_THEME;
+    
     return (
-      <div className={`h-full w-full bg-white flex items-center justify-center ${className}`}>
-        <div className="text-gray-800">Initializing chart...</div>
+      <div 
+        className={`h-full w-full flex items-center justify-center ${className}`}
+        style={{
+          backgroundColor: isDark ? colors.background.primary : '#ffffff',
+        }}
+      >
+        <div 
+          className="text-lg font-medium"
+          style={{
+            color: isDark ? colors.text.secondary : '#6b7280',
+          }}
+        >
+          Initializing chart...
+        </div>
       </div>
     );
   }
 
+  const isDark = theme === 'dark';
+  const colors = BUCKETSHOP_ELITE_THEME;
+
   return (
-    <div className={`h-full w-full bg-white flex flex-col ${className}`}>
+    <div 
+      className={`h-full w-full flex flex-col transition-colors duration-200 ${className}`}
+      style={{
+        backgroundColor: isDark ? colors.background.primary : '#ffffff',
+      }}
+    >
       {/* Chart Header */}
       {renderHeader()}
 
@@ -261,6 +335,9 @@ export function ChartContainer({
         <div
           ref={chartContainerRef}
           className="h-[calc(100vh-80px)] w-full"
+          style={{
+            backgroundColor: isDark ? colors.background.primary : '#ffffff',
+          }}
         />
 
         {/* Chart Overlays */}

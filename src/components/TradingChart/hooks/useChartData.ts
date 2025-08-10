@@ -44,9 +44,8 @@ export function useChartData() {
       setLoadingState('loading');
       clearError();
 
-      console.log(`Loading historical data for ${symbol}...`);
 
-      const result = await HistoricalDataService.fetchBTCPerpData({
+      const result = await HistoricalDataService.fetchMarketData(symbol, {
         maxCandles: 1000,
         timeout: 30000,
         retries: 3,

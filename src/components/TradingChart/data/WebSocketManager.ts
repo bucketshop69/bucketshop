@@ -51,6 +51,21 @@ export interface DriftTradeData {
   };
 }
 
+/**
+ * Drift Protocol precision constants
+ * Reference: https://docs.drift.trade/developer-resources/sdk-documentation
+ */
+export const DRIFT_PRECISION = {
+  BASE_PRECISION: 1e9,                    // perp base asset amount  
+  QUOTE_PRECISION: 1e6,                   // perp quote asset amount
+  PRICE_PRECISION: 1e6,                   // price (oracle prices, market prices)
+  FUNDING_RATE_PRECISION: 1e9,            // funding rate
+  MARGIN_PRECISION: 1e4,                  // margin ratio
+  SPOT_WEIGHT_PRECISION: 1e4,             // asset/liability weight  
+  SPOT_BALANCE_PRECISION: 1e9,            // spot token balance
+  SPOT_IMF_PRECISION: 1e6,                // imf weight precision
+} as const;
+
 export type DriftMessageData = DriftOrderbookData | DriftTradeData;
 
 export interface WebSocketCallbacks {
@@ -252,13 +267,13 @@ export class WebSocketManager {
   /**
    * Process parsed WebSocket message
    */
-  private processMessage(data: any): void {
+  private processMessage(data: unknown): void {
     try {
-      console.log(data);
+      // console.log(data);
 
       // Handle orderbook updates for oracle price extraction
       if (data.channel?.includes('orderbook_perp_')) {
-        console.log('Received orderbook data:', data);
+        // console.log('Received orderbook data:', data);
 
         // Parse the data field which contains JSON string
         let orderbookData;
@@ -271,7 +286,7 @@ export class WebSocketManager {
 
         // Extract oracle price (primary) or fallback to oracleData.price
         let rawOraclePrice = null;
-        console.log(orderbookData);
+        // console.log(orderbookData);
 
         if (orderbookData.oracle) {
           rawOraclePrice = parseFloat(orderbookData.oracle);
@@ -280,9 +295,9 @@ export class WebSocketManager {
         }
 
         if (rawOraclePrice && rawOraclePrice > 0) {
-          // Drift oracle prices are scaled by 10^6, so divide to get actual price
-          const oraclePrice = rawOraclePrice / 1000000;
-          console.log(`Oracle price update: $${oraclePrice.toFixed(2)} (raw: ${rawOraclePrice})`);
+          // Use official Drift PRICE_PRECISION constant for consistent scaling across all markets
+          const oraclePrice = rawOraclePrice / DRIFT_PRECISION.PRICE_PRECISION;
+          // console.log(`Oracle price update: $${oraclePrice.toFixed(2)} (raw: ${rawOraclePrice})`);
           this.callbacks.onPriceUpdate(oraclePrice);
         } else {
           console.warn('No valid oracle price found in orderbook data');

@@ -40,6 +40,7 @@ export function useRealTime() {
   // Get current market from market store
   const selectedSymbol = useMarketStore(selectSelectedSymbol);
 
+
   // WebSocket manager instance (persisted across re-renders)
   const wsManagerRef = useRef<WebSocketManager | null>(null);
 
@@ -71,7 +72,7 @@ export function useRealTime() {
     // Create WebSocket callbacks - using current values at connection time
     const callbacks: WebSocketCallbacks = {
       onConnectionChange: (state) => {
-        console.log(`WebSocket connection state: ${state}`);
+        // console.log(`WebSocket connection state: ${state}`);
         setConnectionState(state);
         if (state === 'connected') {
           clearError();
@@ -79,7 +80,6 @@ export function useRealTime() {
       },
       onPriceUpdate: (price) => {
         try {
-          console.log(price);
 
           setCurrentPrice(price);
           updateLastUpdateTime();
@@ -136,17 +136,15 @@ export function useRealTime() {
     };
 
     // Create new WebSocket manager
+    console.log(`useRealTime: Creating WebSocket connection for ${selectedSymbol}`);
     wsManagerRef.current = new WebSocketManager(callbacks);
 
     // Connect and subscribe to current market
     wsManagerRef.current.connect();
     wsManagerRef.current.subscribeToMarket(selectedSymbol);
 
-  }, [selectedSymbol,
-    setConnectionState,
-    clearError,
-    setCurrentPrice,
-    updateLastUpdateTime, updateCurrentCandle, setError, updateMetrics]);
+  }, [selectedSymbol]);
+
 
   /**
    * Stop real-time connection
@@ -188,13 +186,90 @@ export function useRealTime() {
     return wsManagerRef.current?.isHealthy() || false;
   }, []);
 
-  // Auto-connect when autoRefresh is enabled and we have a selected symbol
+  // Auto-connect and handle market switching  
   useEffect(() => {
-    if (autoRefresh && selectedSymbol && wsConnectionState === 'disconnected') {
-      console.log('Auto-connecting to real-time feed for', selectedSymbol);
-      connect();
+    if (!selectedSymbol) return;
+    
+    // Disconnect old connection if exists
+    if (wsManagerRef.current) {
+      wsManagerRef.current.disconnect();
+      wsManagerRef.current = null;
     }
-  }, [autoRefresh, selectedSymbol, wsConnectionState, connect]);
+    
+    // Reset candle tracking when switching markets
+    currentCandleRef.current = null;
+    lastCandleTimeRef.current = 0;
+    
+    // Create WebSocket callbacks
+    const callbacks: WebSocketCallbacks = {
+      onConnectionChange: (state) => {
+        setConnectionState(state);
+        if (state === 'connected') {
+          clearError();
+        }
+      },
+      onPriceUpdate: (price) => {
+        try {
+          setCurrentPrice(price);
+          updateLastUpdateTime();
+
+          // Build real-time candle for chart updates
+          const now = Math.floor(Date.now() / 1000);
+          const candleTime = Math.floor(now / 3600) * 3600; // 1-hour candles
+
+          if (!currentCandleRef.current || currentCandleRef.current.time !== candleTime) {
+            // New candle period
+            currentCandleRef.current = {
+              time: candleTime,
+              open: price,
+              high: price,
+              low: price,
+              close: price,
+              volume: 0,
+            };
+          } else {
+            // Update existing candle
+            const candle = currentCandleRef.current;
+            candle.high = Math.max(candle.high, price);
+            candle.low = Math.min(candle.low, price);
+            candle.close = price;
+          }
+
+          // Send candle update to chart
+          if (currentCandleRef.current) {
+            updateCurrentCandle({
+              time: currentCandleRef.current.time,
+              open: currentCandleRef.current.open,
+              high: currentCandleRef.current.high,
+              low: currentCandleRef.current.low,
+              close: currentCandleRef.current.close,
+              volume: currentCandleRef.current.volume,
+            });
+          }
+
+          clearError();
+        } catch (error) {
+          console.error('Failed to process price update:', error);
+        }
+      },
+      onError: (error) => {
+        console.error('WebSocket error:', error);
+        setError({
+          code: 'WEBSOCKET_ERROR',
+          message: error.message || 'WebSocket connection error',
+          timestamp: Date.now(),
+        });
+      },
+    };
+    
+    // Create and connect WebSocket directly
+    const wsManager = new WebSocketManager(callbacks);
+    wsManagerRef.current = wsManager;
+    
+    wsManager.connect();
+    wsManager.subscribeToMarket(selectedSymbol);
+    
+  }, [selectedSymbol, setConnectionState, clearError, setCurrentPrice, updateLastUpdateTime, setError]);
 
   // Cleanup on unmount
   useEffect(() => {

@@ -87,7 +87,7 @@ export const useMarketStore = create<MarketStore>((set, get) => ({
       }
 
       // Find first available market as default (prioritize BTC if available)
-      const defaultMarket = response.data.find(m => m.config.symbol.includes('BTC')) || response.data[0];
+      const defaultMarket = response.data.find(m => m.config.symbol.includes('SOL')) || response.data[0];
 
       set({
         availableMarkets: response.data,

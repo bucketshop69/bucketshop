@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import { useChartStore } from '../data/chartStore';
+import { useChartStore, getTimeframeDuration } from '../data/chartStore';
 import { useMarketStore, selectSelectedSymbol } from '../data/marketStore';
 import { WebSocketManager, WebSocketCallbacks } from '../data/WebSocketManager';
 
@@ -26,6 +26,7 @@ export function useRealTime() {
     // State
     wsConnectionState,
     autoRefresh,
+    timeframe,
 
     // Actions
     setConnectionState,
@@ -85,7 +86,8 @@ export function useRealTime() {
           updateLastUpdateTime();
 
           const now = Math.floor(Date.now() / 1000);
-          const candleTime = Math.floor(now / 3600) * 3600;
+          const timeframeDurationSeconds = getTimeframeDuration(timeframe) / 1000;
+          const candleTime = Math.floor(now / timeframeDurationSeconds) * timeframeDurationSeconds;
 
           if (!currentCandleRef.current || currentCandleRef.current.time !== candleTime) {
             currentCandleRef.current = {
@@ -215,7 +217,8 @@ export function useRealTime() {
 
           // Build real-time candle for chart updates
           const now = Math.floor(Date.now() / 1000);
-          const candleTime = Math.floor(now / 3600) * 3600; // 1-hour candles
+          const timeframeDurationSeconds = getTimeframeDuration(timeframe) / 1000;
+          const candleTime = Math.floor(now / timeframeDurationSeconds) * timeframeDurationSeconds;
 
           if (!currentCandleRef.current || currentCandleRef.current.time !== candleTime) {
             // New candle period
@@ -269,7 +272,7 @@ export function useRealTime() {
     wsManager.connect();
     wsManager.subscribeToMarket(selectedSymbol);
     
-  }, [selectedSymbol, setConnectionState, clearError, setCurrentPrice, updateLastUpdateTime, setError]);
+  }, [selectedSymbol, timeframe, setConnectionState, clearError, setCurrentPrice, updateLastUpdateTime, setError]);
 
   // Cleanup on unmount
   useEffect(() => {

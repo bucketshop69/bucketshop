@@ -12,6 +12,7 @@ import { useRealTime } from '../hooks/useRealTime';
 import { useMarketStore, selectSelectedSymbol, selectAvailableMarkets, useMarketInitialization } from '../data/marketStore';
 import { ChartOverlays } from './ChartOverlays';
 import { MarketDropdown } from './MarketDropdown';
+import { TimeframeSelector } from './TimeframeSelector';
 
 export interface ChartContainerProps {
   className?: string;
@@ -190,10 +191,10 @@ export function ChartContainer({
 
         chartEngineRef.current.setData(chartData);
 
-        // Fit content only on initial load
+        // Set initial zoom on first load (show last 50 candles)
         if (loadingState === 'success' && !isInitialLoadComplete) {
           setTimeout(() => {
-            chartEngineRef.current.fitContent();
+            chartEngineRef.current.setInitialZoom();
             setIsInitialLoadComplete(true);
           }, 100);
         }
@@ -285,6 +286,9 @@ export function ChartContainer({
               onMarketSelect={handleMarketSwitch}
               theme={theme}
             />
+
+            {/* Timeframe Selector */}
+            <TimeframeSelector />
 
             {/* Current Price */}
             {currentPrice > 0 && (

@@ -1,6 +1,19 @@
 import { create } from 'zustand';
 import { ProcessedCandleData } from '../core/DataProcessor';
 
+// Supported timeframes
+export type Timeframe = '1m' | '5m' | '15m' | '1h' | '4h' | '1d';
+
+// Timeframe display configurations
+export const TIMEFRAME_CONFIG = {
+  '1m': { label: '1m', duration: 60 * 1000, displayName: '1 Minute' },
+  '5m': { label: '5m', duration: 5 * 60 * 1000, displayName: '5 Minutes' },
+  '15m': { label: '15m', duration: 15 * 60 * 1000, displayName: '15 Minutes' },
+  '1h': { label: '1h', duration: 60 * 60 * 1000, displayName: '1 Hour' },
+  '4h': { label: '4h', duration: 4 * 60 * 60 * 1000, displayName: '4 Hours' },
+  // '1d': { label: '1d', duration: 24 * 60 * 60 * 1000, displayName: '1 Day' }, // Temporarily disabled - API issues
+} as const;
+
 export type ChartTheme = 'light' | 'dark';
 export type LoadingState = 'idle' | 'loading' | 'success' | 'error';
 export type ConnectionState = 'disconnected' | 'connecting' | 'connected' | 'error';
@@ -38,8 +51,9 @@ export interface ChartState {
   
   // Chart configuration
   symbol: string;
-  timeframe: string;
+  timeframe: Timeframe;
   autoRefresh: boolean;
+  isTimeframeSwitching: boolean;
   
   // Performance tracking
   renderCount: number;
@@ -66,8 +80,9 @@ export interface ChartActions {
   
   // Configuration actions
   setSymbol: (symbol: string) => void;
-  setTimeframe: (timeframe: string) => void;
+  setTimeframe: (timeframe: Timeframe) => void;
   setAutoRefresh: (enabled: boolean) => void;
+  setTimeframeSwitching: (switching: boolean) => void;
   
   // Performance actions
   incrementRenderCount: () => void;
@@ -107,6 +122,7 @@ const initialState: ChartState = {
   symbol: '', // Will be set by market store
   timeframe: '1h',
   autoRefresh: true,
+  isTimeframeSwitching: false,
   
   // Performance tracking
   renderCount: 0,
@@ -253,9 +269,22 @@ export const useChartStore = create<ChartStore>((set, get) => ({
   // Configuration actions
   setSymbol: (symbol) => set({ symbol }),
   
-  setTimeframe: (timeframe) => set({ timeframe }),
+  setTimeframe: (timeframe) => {
+    const currentTimeframe = get().timeframe;
+    
+    if (currentTimeframe !== timeframe) {
+      console.log(`Switching timeframe: ${currentTimeframe} → ${timeframe}`);
+      
+      set({
+        timeframe,
+        isTimeframeSwitching: true,
+      });
+    }
+  },
   
   setAutoRefresh: (autoRefresh) => set({ autoRefresh }),
+  
+  setTimeframeSwitching: (isTimeframeSwitching) => set({ isTimeframeSwitching }),
 
   // Performance actions
   incrementRenderCount: () => {
@@ -312,4 +341,26 @@ export const useChartDebug = () => {
     return useChartStore.getState();
   }
   return null;
+};
+
+// Timeframe-specific selectors
+export const selectTimeframe = (state: ChartStore) => state.timeframe;
+export const selectIsTimeframeSwitching = (state: ChartStore) => state.isTimeframeSwitching;
+
+// Helper to get timeframe duration in milliseconds
+export const getTimeframeDuration = (timeframe: Timeframe): number => {
+  return TIMEFRAME_CONFIG[timeframe].duration;
+};
+
+// Hook for easy timeframe switching
+export const useTimeframeSelection = () => {
+  const { timeframe, setTimeframe, isTimeframeSwitching, setTimeframeSwitching } = useChartStore();
+
+  return {
+    currentTimeframe: timeframe,
+    switchTimeframe: setTimeframe,
+    isTimeframeSwitching,
+    setTimeframeSwitching,
+    availableTimeframes: Object.keys(TIMEFRAME_CONFIG) as Timeframe[],
+  };
 };

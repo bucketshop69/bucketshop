@@ -1,7 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef } from 'react';
-import { useChartStore } from '../data/chartStore';
+import { useChartStore, selectTimeframe } from '../data/chartStore';
 import { HistoricalDataService } from '../data/HistoricalDataService';
 import { CandleBuffer } from '../core/CandleBuffer';
 import { DataProcessor } from '../core/DataProcessor';
@@ -20,15 +20,17 @@ export function useChartData() {
     // State
     candles,
     symbol,
+    timeframe,
     loadingState,
     error,
-    
+
     // Actions
     setCandles,
     setLoadingState,
     setError,
     clearError,
     updateMetrics,
+    setTimeframeSwitching,
   } = useChartStore();
 
   // CandleBuffer for efficient memory management
@@ -39,22 +41,26 @@ export function useChartData() {
    */
   const loadHistoricalData = useCallback(async () => {
     if (loadingState === 'loading') return;
-    
+
     try {
       setLoadingState('loading');
       clearError();
 
 
+      // Use more candles for daily timeframe to get more historical coverage
+      const maxCandles = timeframe === '1d' ? 200 : 1000;
+
       const result = await HistoricalDataService.fetchMarketData(symbol, {
-        maxCandles: 1000,
+        maxCandles,
         timeout: 30000,
         retries: 3,
+        timeframe: timeframe,
       });
 
       if (result.success && result.data.length > 0) {
         // Clear buffer and add new data
         candleBufferRef.current.clear();
-        
+
         // Add candles to buffer
         result.data.forEach(candle => {
           candleBufferRef.current.addCandle(candle);
@@ -62,7 +68,7 @@ export function useChartData() {
 
         // Update store with processed data
         setCandles(result.data);
-        
+
         // Update metrics
         updateMetrics({
           candleCount: result.data.length,
@@ -71,22 +77,22 @@ export function useChartData() {
         });
 
         setLoadingState('success');
-        
+
         console.log(`Successfully loaded ${result.data.length} candles (${result.dataQuality.toFixed(1)}% quality)`);
       } else {
         throw new Error(result.error || 'Failed to load data');
       }
     } catch (error) {
       const errorMessage = error instanceof Error ? error.message : 'Unknown error';
-      
+
       console.error('Failed to load historical data:', errorMessage);
-      
+
       setError({
         code: 'FETCH_ERROR',
         message: errorMessage,
         timestamp: Date.now(),
       });
-      
+
       setLoadingState('error');
     }
   }, [symbol, loadingState, setLoadingState, setError, clearError, setCandles, updateMetrics]);
@@ -98,7 +104,7 @@ export function useChartData() {
     try {
       // Process the raw candle data
       const processedCandle = DataProcessor.processSingleCandle(newCandle);
-      
+
       if (!processedCandle) {
         console.warn('Failed to process candle:', newCandle);
         return;
@@ -106,11 +112,11 @@ export function useChartData() {
 
       // Update buffer
       candleBufferRef.current.updateLastCandle(processedCandle);
-      
+
       // Update store
       const allCandles = candleBufferRef.current.getAllCandles();
       setCandles(allCandles);
-      
+
       // Update metrics
       updateMetrics({
         candleCount: allCandles.length,
@@ -129,7 +135,7 @@ export function useChartData() {
     try {
       // Process the raw candle data
       const processedCandle = DataProcessor.processSingleCandle(newCandle);
-      
+
       if (!processedCandle) {
         console.warn('Failed to process candle:', newCandle);
         return;
@@ -137,11 +143,11 @@ export function useChartData() {
 
       // Add to buffer
       candleBufferRef.current.addCandle(processedCandle);
-      
+
       // Update store
       const allCandles = candleBufferRef.current.getAllCandles();
       setCandles(allCandles);
-      
+
       // Update metrics
       updateMetrics({
         candleCount: allCandles.length,
@@ -189,12 +195,22 @@ export function useChartData() {
     }
   }, [loadHistoricalData, loadingState]);
 
-  // Auto-load data when symbol changes
+  // Auto-load data when symbol or timeframe changes
   useEffect(() => {
     if (symbol && loadingState === 'idle') {
       loadHistoricalData();
     }
-  }, [symbol, loadingState, loadHistoricalData]);
+  }, [symbol, timeframe, loadingState, loadHistoricalData]);
+
+  // Handle timeframe switching - clear data and reload
+  useEffect(() => {
+    if (symbol && timeframe) {
+      // Clear existing data when timeframe changes
+      setCandles([]);
+      setLoadingState('idle'); // Trigger reload
+      setTimeframeSwitching(false); // Reset switching state after data loads
+    }
+  }, [timeframe, symbol, setCandles, setLoadingState, setTimeframeSwitching]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -209,13 +225,13 @@ export function useChartData() {
   return {
     // Data
     candles,
-    
+
     // State
     isLoading: loadingState === 'loading',
     isSuccess: loadingState === 'success',
     isError: loadingState === 'error',
     error,
-    
+
     // Actions
     loadHistoricalData,
     updateCandle,
@@ -223,7 +239,7 @@ export function useChartData() {
     getCandlesInRange,
     clearData,
     retryLoad,
-    
+
     // Utilities
     getBufferStats,
   };

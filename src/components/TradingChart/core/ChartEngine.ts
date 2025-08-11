@@ -1,13 +1,13 @@
-import { 
-  createChart, 
-  IChartApi, 
+import {
+  createChart,
+  IChartApi,
   ISeriesApi,
   CandlestickSeries,
   CandlestickData,
   DeepPartial,
   ChartOptions,
   CandlestickSeriesOptions,
-  Time 
+  Time
 } from 'lightweight-charts';
 import { BUCKETSHOP_ELITE_THEME } from './theme';
 
@@ -55,24 +55,24 @@ export class ChartEngine {
     // Create chart with BucketShop Elite theme
     const isDark = config.theme === 'dark';
     const theme = BUCKETSHOP_ELITE_THEME;
-    
+
     const chartOptions: DeepPartial<ChartOptions> = {
       width: config.width,
       height: config.height,
       layout: {
-        background: { 
-          color: isDark ? theme.background.primary : '#ffffff' 
+        background: {
+          color: isDark ? theme.background.primary : '#ffffff'
         },
         textColor: isDark ? theme.text.primary : '#333333',
         fontSize: 12,
         fontFamily: 'Inter, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif',
       },
       grid: {
-        vertLines: { 
+        vertLines: {
           color: isDark ? theme.grid.primary : '#f0f0f0',
           style: 0, // LineStyle.Solid
         },
-        horzLines: { 
+        horzLines: {
           color: isDark ? theme.grid.primary : '#f0f0f0',
           style: 0, // LineStyle.Solid
         },
@@ -200,16 +200,36 @@ export class ChartEngine {
   }
 
   /**
+   * Set initial zoom to show recent candles (zoom in)
+   */
+  setInitialZoom(): void {
+    if (!this.chart || !this.candlestickSeries) return;
+
+    // Show only the last 50 candles instead of all data
+    const data = this.candlestickSeries.data();
+    if (data.length > 50) {
+      const startIndex = Math.max(0, data.length - 150);
+      const startTime = data[startIndex].time;
+      const endTime = data[data.length - 1].time;
+
+      this.chart.timeScale().setVisibleRange({
+        from: startTime,
+        to: endTime,
+      });
+    }
+  }
+
+  /**
    * Get the current visible range
    */
   getVisibleRange(): { from: number; to: number } | null {
     if (!this.chart) return null;
-    
+
     const timeScale = this.chart.timeScale();
     const visibleRange = timeScale.getVisibleRange();
-    
+
     if (!visibleRange) return null;
-    
+
     return {
       from: visibleRange.from as number,
       to: visibleRange.to as number,
@@ -240,16 +260,16 @@ export class ChartEngine {
 
     this.chart.applyOptions({
       layout: {
-        background: { 
-          color: isDark ? theme.background.primary : '#ffffff' 
+        background: {
+          color: isDark ? theme.background.primary : '#ffffff'
         },
         textColor: isDark ? theme.text.primary : '#333333',
       },
       grid: {
-        vertLines: { 
+        vertLines: {
           color: isDark ? theme.grid.primary : '#f0f0f0',
         },
-        horzLines: { 
+        horzLines: {
           color: isDark ? theme.grid.primary : '#f0f0f0',
         },
       },

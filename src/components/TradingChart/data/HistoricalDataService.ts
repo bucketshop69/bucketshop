@@ -1,4 +1,5 @@
 import { DataProcessor, ProcessedCandleData } from '../core/DataProcessor';
+import { Timeframe, TIMEFRAME_CONFIG } from './chartStore';
 
 export interface DataSource {
   url: string;
@@ -11,6 +12,7 @@ export interface FetchOptions {
   maxCandles?: number;
   timeout?: number;
   retries?: number;
+  timeframe?: Timeframe;
 }
 
 export interface FetchResult {
@@ -48,6 +50,18 @@ interface DriftAPIResponse {
 }
 
 /**
+ * Drift API interval mapping for different timeframes
+ */
+const DRIFT_INTERVAL_MAP: Record<Timeframe, string> = {
+  '1m': '1',
+  '5m': '5', 
+  '15m': '15',
+  '1h': '60',
+  '4h': '240',
+  '1d': '1440', // Temporarily disabled in UI but kept for future use
+};
+
+/**
  * HistoricalDataService - Fetches historical data from Drift REST API
  * 
  * This service fetches historical candle data from Drift's modern REST API
@@ -78,21 +92,28 @@ export class HistoricalDataService {
       maxCandles = 200,
       timeout = this.DEFAULT_TIMEOUT,
       retries = this.DEFAULT_RETRIES,
+      timeframe = '1h', // Default to 1h if not specified
     } = options;
+
+    // Get Drift API interval for the timeframe
+    const interval = DRIFT_INTERVAL_MAP[timeframe];
+    if (!interval) {
+      throw new Error(`Unsupported timeframe: ${timeframe}`);
+    }
 
     const startTime = Date.now();
     const source: DataSource = {
-      url: `${this.BASE_URL}/market/${market}/candles/60?limit=${maxCandles}`,
+      url: `${this.BASE_URL}/market/${market}/candles/${interval}?limit=${maxCandles}`,
       market,
-      interval: '60',
+      interval,
       limit: maxCandles,
     };
 
-    // Check cache first
-    const cacheKey = `${market}_60_${maxCandles}`;
+    // Check cache first (include timeframe in cache key)
+    const cacheKey = `${market}_${interval}_${maxCandles}`;
     const cached = this.cache.get(cacheKey);
     if (cached && Date.now() - cached.timestamp < this.CACHE_TTL) {
-      console.log(`Returning cached data for ${market}`);
+      console.log(`Returning cached data for ${market} ${timeframe}`);
       return {
         success: true,
         data: cached.data,

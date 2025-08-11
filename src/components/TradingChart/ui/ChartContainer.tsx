@@ -329,28 +329,6 @@ export function ChartContainer({
                     'Offline'}
               </span>
             </div>
-
-            {/* Timeframe Badge */}
-            <div
-              className="px-3 py-1 rounded-lg text-sm font-medium transition-colors duration-200"
-              style={{
-                backgroundColor: isDark ? colors.accent.primary + '20' : '#f3f4f6',
-                color: isDark ? colors.accent.primary : '#374151',
-                border: `1px solid ${isDark ? colors.accent.primary + '40' : '#d1d5db'}`,
-              }}
-            >
-              1H
-            </div>
-
-            {/* Candle count */}
-            <span
-              className="text-sm font-medium transition-colors duration-200"
-              style={{
-                color: isDark ? colors.text.tertiary : '#9ca3af',
-              }}
-            >
-              {metrics.candleCount.toLocaleString()} candles
-            </span>
           </div>
         </div>
       </div>

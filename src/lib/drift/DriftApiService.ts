@@ -1,0 +1,111 @@
+// Client-side API service that talks to our Next.js API routes
+export interface AccountStatus {
+  isChecking: boolean;
+  exists: boolean;
+  error?: string;
+}
+
+export class DriftApiService {
+  private walletAddress: string | null = null;
+
+  constructor() {}
+
+  setWallet(walletAddress: string) {
+    this.walletAddress = walletAddress;
+  }
+
+  async checkAccountStatus(): Promise<AccountStatus> {
+    if (!this.walletAddress) {
+      return { isChecking: false, exists: false, error: 'No wallet connected' };
+    }
+
+    try {
+      const response = await fetch('/api/drift/check-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          walletAddress: this.walletAddress,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return {
+          isChecking: false,
+          exists: false,
+          error: data.error || 'Failed to check account',
+        };
+      }
+
+      return data.accountStatus;
+    } catch (error) {
+      console.error('Account check failed:', error);
+      return {
+        isChecking: false,
+        exists: false,
+        error: 'Network error',
+      };
+    }
+  }
+
+  async createAccount(wallet: any): Promise<boolean> {
+    if (!this.walletAddress || !wallet) {
+      console.error('No wallet connected');
+      return false;
+    }
+
+    try {
+      // Step 1: Get unsigned transaction from server
+      const response = await fetch('/api/drift/create-account', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          walletAddress: this.walletAddress,
+          signature: 'mock-for-now',
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        console.error('Failed to create transaction:', data.error);
+        return false;
+      }
+
+      // Step 2: Sign and submit transaction with real wallet
+      const { Transaction } = await import('@solana/web3.js');
+      const transaction = Transaction.from(Buffer.from(data.transaction, 'base64'));
+      
+      // Sign transaction with Privy wallet
+      const signedTransaction = await wallet.signTransaction(transaction);
+      
+      // Step 3: Submit signed transaction to Solana
+      const { Connection } = await import('@solana/web3.js');
+      const rpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL || 'https://mainnet.helius-rpc.com/?api-key=89af9d38-1256-43d3-9c5a-a9aa454d0def';
+      const connection = new Connection(rpcUrl);
+      
+      const signature = await connection.sendRawTransaction(signedTransaction.serialize());
+      await connection.confirmTransaction(signature, 'confirmed');
+      
+      console.log('Account created successfully! Signature:', signature);
+      return true;
+
+    } catch (error) {
+      console.error('Account creation error:', error);
+      return false;
+    }
+  }
+
+  isConnected(): boolean {
+    return this.walletAddress !== null;
+  }
+
+  disconnect(): void {
+    this.walletAddress = null;
+  }
+}

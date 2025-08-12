@@ -1,7 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
+import { usePrivy } from '@privy-io/react-auth';
+import { useSolanaWallets } from '@privy-io/react-auth/solana';
 import { theme } from '@/lib/theme';
+import { CreateAccountModal } from '@/components/CreateAccountModal';
+import { DriftApiService, AccountStatus } from '@/lib/drift/DriftApiService';
 
 function MarketDisplay() {
   // TODO: Get selected market from chart context
@@ -109,27 +113,134 @@ function TradingButtons({ positionSize, leverage }: { positionSize: string; leve
 export function DriftTradingPanel() {
   const [positionSize, setPositionSize] = useState('');
   const [leverage, setLeverage] = useState(1);
+  const [accountStatus, setAccountStatus] = useState<AccountStatus>({ isChecking: true, exists: false });
+  const [showCreateModal, setShowCreateModal] = useState(false);
+  const [driftService] = useState(() => new DriftApiService());
+
+  const { authenticated } = usePrivy();
+  const { wallets } = useSolanaWallets();
+
+  // Check account status when wallet connects
+  useEffect(() => {
+    console.log('useEffect triggered:', { authenticated, wallets: wallets.length }); // Debug log
+    
+    const checkAccount = async () => {
+      console.log('checkAccount called'); // Debug log
+      
+      if (!authenticated || wallets.length === 0) {
+        console.log('No wallet connected, skipping account check'); // Debug log
+        setAccountStatus({ isChecking: false, exists: false, error: 'Wallet not connected' });
+        return;
+      }
+
+      try {
+        const wallet = wallets[0]; // Use first wallet
+        driftService.setWallet(wallet.address);
+        
+        const status = await driftService.checkAccountStatus();
+        setAccountStatus(status);
+        
+        console.log('Account status:', status); // Debug log
+        
+        // Show modal if no account exists (either no error, or the "no user" error)
+        const isNoAccountError = status.error?.includes('DriftClient has no user');
+        if (!status.exists && (!status.error || isNoAccountError)) {
+          console.log('Showing create account modal'); // Debug log
+          setShowCreateModal(true);
+        }
+      } catch (error) {
+        setAccountStatus({ 
+          isChecking: false, 
+          exists: false, 
+          error: error instanceof Error ? error.message : 'Connection error' 
+        });
+      }
+    };
+
+    checkAccount();
+  }, [authenticated, wallets, driftService]);
+
+  const handleCreateAccount = async (): Promise<boolean> => {
+    if (wallets.length === 0) {
+      console.error('No wallet available for signing');
+      return false;
+    }
+
+    try {
+      const wallet = wallets[0]; // Use first wallet for signing
+      const success = await driftService.createAccount(wallet);
+      if (success) {
+        // Recheck account status
+        const newStatus = await driftService.checkAccountStatus();
+        setAccountStatus(newStatus);
+      }
+      return success;
+    } catch (error) {
+      console.error('Account creation failed:', error);
+      return false;
+    }
+  };
+
+  // Show different UI based on account status
+  const renderContent = () => {
+    if (!authenticated) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <p style={{ color: theme.text.secondary }}>Connect wallet to start trading</p>
+        </div>
+      );
+    }
+
+    if (accountStatus.isChecking) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <p style={{ color: theme.text.secondary }}>Checking account...</p>
+        </div>
+      );
+    }
+
+    if (accountStatus.error && !accountStatus.exists) {
+      return (
+        <div className="flex items-center justify-center h-full">
+          <p style={{ color: theme.text.secondary }}>Error: {accountStatus.error}</p>
+        </div>
+      );
+    }
+
+    // Show normal trading interface if account exists
+    return (
+      <>
+        <MarketDisplay />
+        
+        <div>
+          <PositionSizeInput
+            value={positionSize}
+            onChange={setPositionSize}
+          />
+
+          <LeverageSlider
+            value={leverage}
+            onChange={setLeverage}
+          />
+
+          <TradingButtons
+            positionSize={positionSize}
+            leverage={leverage}
+          />
+        </div>
+      </>
+    );
+  };
 
   return (
     <div className="h-full p-6" style={{ backgroundColor: theme.background.primary }}>
-      <MarketDisplay />
-
-      <div>
-        <PositionSizeInput
-          value={positionSize}
-          onChange={setPositionSize}
-        />
-
-        <LeverageSlider
-          value={leverage}
-          onChange={setLeverage}
-        />
-
-        <TradingButtons
-          positionSize={positionSize}
-          leverage={leverage}
-        />
-      </div>
+      {renderContent()}
+      
+      <CreateAccountModal
+        isOpen={showCreateModal}
+        onClose={() => setShowCreateModal(false)}
+        onCreateAccount={handleCreateAccount}
+      />
     </div>
   );
 }

@@ -29,16 +29,9 @@ export function TimeframeSelector({ className }: TimeframeSelectorProps) {
   return (
     <div 
       className={cn(
-        "flex items-center gap-1 rounded-md p-1",
-        "border border-slate-700/50",
-        "bg-gradient-to-r from-slate-900/80 to-slate-800/80",
-        "backdrop-blur-sm",
+        "flex items-center gap-1 p-1",
         className
       )}
-      style={{
-        background: `linear-gradient(to right, ${BUCKETSHOP_ELITE_THEME.background.secondary}CC, ${BUCKETSHOP_ELITE_THEME.background.tertiary}CC)`,
-        borderColor: `${BUCKETSHOP_ELITE_THEME.grid.primary}80`,
-      }}
     >
       {availableTimeframes.map((timeframe) => {
         const config = TIMEFRAME_CONFIG[timeframe];

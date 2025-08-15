@@ -4,12 +4,12 @@ import { DriftServerService } from '@/lib/server/DriftServerService';
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json();
-    const { amount, marketIndex = 0 } = body;
+    const { amount, marketIndex = 0, walletAddress } = body;
 
     // Validate required parameters
-    if (!amount) {
+    if (!amount || !walletAddress) {
       return NextResponse.json(
-        { error: 'Missing required parameter: amount' },
+        { error: 'Missing required parameters: amount and walletAddress' },
         { status: 400 }
       );
     }
@@ -28,8 +28,26 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Create wallet object for transaction creation
+    const { PublicKey } = await import('@solana/web3.js');
+    const publicKey = new PublicKey(walletAddress);
+    const serverWallet = {
+      publicKey: publicKey,
+      signTransaction: async () => { throw new Error('Server-side wallet - signing not supported'); },
+      signAllTransactions: async () => { throw new Error('Server-side wallet - signing not supported'); },
+    };
+
     // Create deposit transaction
     const driftService = new DriftServerService();
+    const connected = await driftService.connect(serverWallet as any);
+    
+    if (!connected) {
+      return NextResponse.json(
+        { error: 'Failed to connect to Drift' },
+        { status: 500 }
+      );
+    }
+
     const serializedTransaction = await driftService.createDepositTransaction(
       amount,
       marketIndex

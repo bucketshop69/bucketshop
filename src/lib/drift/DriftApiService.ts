@@ -191,6 +191,7 @@ export class DriftApiService {
         body: JSON.stringify({
           amount,
           marketIndex,
+          walletAddress: this.walletAddress,
         }),
       });
 

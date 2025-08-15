@@ -6,6 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const { walletAddress } = await request.json();
 
+
     if (!walletAddress) {
       return NextResponse.json(
         { error: 'Wallet address is required' },
@@ -14,14 +15,15 @@ export async function POST(request: NextRequest) {
     }
 
     // Create a mock wallet for account checking
-    const mockWallet = {
-      publicKey: new PublicKey(walletAddress),
-      signTransaction: async () => { throw new Error('Mock wallet'); },
-      signAllTransactions: async () => { throw new Error('Mock wallet'); },
+    const publicKey = new PublicKey(walletAddress);
+    const serverWallet = {
+      publicKey: publicKey,
+      signTransaction: async () => { throw new Error('Server-side wallet - signing not supported'); },
+      signAllTransactions: async () => { throw new Error('Server-side wallet - signing not supported'); },
     };
 
     const driftService = new DriftServerService();
-    const connected = await driftService.connect(mockWallet as any);
+    const connected = await driftService.connect(serverWallet as any);
 
     if (!connected) {
       return NextResponse.json(

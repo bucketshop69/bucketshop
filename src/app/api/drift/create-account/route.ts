@@ -6,6 +6,7 @@ export async function POST(request: NextRequest) {
   try {
     const { walletAddress, signature } = await request.json();
 
+
     if (!walletAddress || !signature) {
       return NextResponse.json(
         { error: 'Wallet address and signature are required' },
@@ -13,16 +14,19 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // For now, we'll use a mock wallet
-    // In production, you'd verify the signature and create a proper wallet
-    const mockWallet = {
-      publicKey: new PublicKey(walletAddress),
-      signTransaction: async () => { throw new Error('Mock wallet'); },
-      signAllTransactions: async () => { throw new Error('Mock wallet'); },
+    // Create a proper wallet object with the real public key
+    const publicKey = new PublicKey(walletAddress);
+    // Create wallet object for transaction creation (no signing methods needed)
+    const walletForTxCreation = {
+      publicKey: publicKey,
+      signTransaction: async () => { throw new Error('Server-side wallet - signing not supported'); },
+      signAllTransactions: async () => { throw new Error('Server-side wallet - signing not supported'); },
     };
 
+
     const driftService = new DriftServerService();
-    const connected = await driftService.connect(mockWallet as any);
+    const connected = await driftService.connect(walletForTxCreation as any);
+    
 
     if (!connected) {
       return NextResponse.json(

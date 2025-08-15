@@ -249,6 +249,34 @@ Follow conventional commits for better tracking:
 
 Example: `feat: add Jest testing framework with TypeScript support`
 
+## Drift Integration Architecture
+
+### Hybrid Transaction Flow (Server + Client)
+**Why this approach**: Drift SDK requires Node.js modules (fs, os, crypto) that cannot run in browser environment.
+
+**Solution**: Server creates unsigned transactions, client signs with real wallet:
+
+1. **Server Side** (`/src/lib/server/DriftServerService.ts`):
+   - Uses full Drift SDK with Node.js environment
+   - Creates unsigned transactions for account creation and order placement
+   - Returns serialized transaction to client via API routes
+
+2. **Client Side** (`/src/lib/drift/DriftApiService.ts`):
+   - Calls server API routes to get unsigned transactions
+   - Signs transactions using Privy wallet integration
+   - Submits signed transactions to Solana network
+
+3. **API Routes**:
+   - `/api/drift/check-account` - Account existence verification
+   - `/api/drift/create-account` - Account creation transaction generation
+   - `/api/drift/place-order` - Order placement transaction generation
+
+**Key Benefits**:
+- Full Drift SDK functionality on server
+- Real wallet signing on client
+- No browser compatibility issues
+- Secure transaction flow
+
 ## Memories and Guidelines
 
 - **Commit Messages**: Do not use Claude-related messages in commit messages

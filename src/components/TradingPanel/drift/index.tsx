@@ -67,16 +67,58 @@ function LeverageSlider({ value, onChange }: { value: number; onChange: (value: 
   );
 }
 
-function TradingButtons({ positionSize, leverage }: { positionSize: string; leverage: number }) {
-  const handleLong = () => {
-    console.log('Long trade:', { positionSize, leverage });
+function TradingButtons({ 
+  positionSize, 
+  leverage, 
+  driftService, 
+  wallet,
+  onOrderComplete 
+}: { 
+  positionSize: string; 
+  leverage: number;
+  driftService: DriftApiService;
+  wallet: any;
+  onOrderComplete: (success: boolean, signature?: string, error?: string) => void;
+}) {
+  const [isPlacingOrder, setIsPlacingOrder] = useState(false);
+  const [lastOrderDirection, setLastOrderDirection] = useState<'LONG' | 'SHORT' | null>(null);
+
+  const placeOrder = async (direction: 'LONG' | 'SHORT') => {
+    if (isPlacingOrder) return;
+    
+    setIsPlacingOrder(true);
+    setLastOrderDirection(direction);
+
+    try {
+      // Calculate actual position size with leverage
+      const amount = parseFloat(positionSize) * leverage;
+      
+      const result = await driftService.placeOrder(direction, amount, wallet);
+      
+      if (result.success) {
+        onOrderComplete(true, result.signature);
+      } else {
+        onOrderComplete(false, undefined, result.error);
+      }
+    } catch (error) {
+      onOrderComplete(false, undefined, error instanceof Error ? error.message : 'Unknown error');
+    } finally {
+      setIsPlacingOrder(false);
+      setLastOrderDirection(null);
+    }
   };
 
-  const handleShort = () => {
-    console.log('Short trade:', { positionSize, leverage });
-  };
+  const handleLong = () => placeOrder('LONG');
+  const handleShort = () => placeOrder('SHORT');
 
-  const isDisabled = !positionSize || parseFloat(positionSize) <= 0;
+  const isDisabled = !positionSize || parseFloat(positionSize) <= 0 || isPlacingOrder;
+
+  const getButtonText = (direction: 'LONG' | 'SHORT') => {
+    if (isPlacingOrder && lastOrderDirection === direction) {
+      return 'PLACING...';
+    }
+    return direction;
+  };
 
   return (
     <div className="grid grid-cols-2 gap-4">
@@ -91,7 +133,7 @@ function TradingButtons({ positionSize, leverage }: { positionSize: string; leve
           color: theme.text.primary
         }}
       >
-        LONG
+        {getButtonText('LONG')}
       </button>
       <button
         onClick={handleShort}
@@ -104,7 +146,7 @@ function TradingButtons({ positionSize, leverage }: { positionSize: string; leve
           color: theme.text.primary
         }}
       >
-        SHORT
+        {getButtonText('SHORT')}
       </button>
     </div>
   );
@@ -116,37 +158,37 @@ export function DriftTradingPanel() {
   const [accountStatus, setAccountStatus] = useState<AccountStatus>({ isChecking: true, exists: false });
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [driftService] = useState(() => new DriftApiService());
+  const [orderFeedback, setOrderFeedback] = useState<{
+    type: 'success' | 'error' | null;
+    message: string;
+  }>({ type: null, message: '' });
 
   const { authenticated } = usePrivy();
   const { wallets } = useSolanaWallets();
 
   // Check account status when wallet connects
   useEffect(() => {
-    console.log('useEffect triggered:', { authenticated, wallets: wallets.length }); // Debug log
     
     const checkAccount = async () => {
-      console.log('checkAccount called'); // Debug log
       
       if (!authenticated || wallets.length === 0) {
-        console.log('No wallet connected, skipping account check'); // Debug log
         setAccountStatus({ isChecking: false, exists: false, error: 'Wallet not connected' });
         return;
       }
 
       try {
         const wallet = wallets[0]; // Use first wallet
+        
         driftService.setWallet(wallet.address);
         
         const status = await driftService.checkAccountStatus();
         setAccountStatus(status);
         
-        console.log('Account status:', status); // Debug log
         
         // Show modal if no account exists (either no error, or the "no user" error)
         const isNoAccountError = status.error?.includes('DriftClient has no user');
         if (!status.exists && (!status.error || isNoAccountError)) {
-          console.log('Showing create account modal'); // Debug log
-          setShowCreateModal(true);
+            setShowCreateModal(true);
         }
       } catch (error) {
         setAccountStatus({ 
@@ -179,6 +221,28 @@ export function DriftTradingPanel() {
       console.error('Account creation failed:', error);
       return false;
     }
+  };
+
+  const handleOrderComplete = (success: boolean, signature?: string, error?: string) => {
+    if (success && signature) {
+      setOrderFeedback({
+        type: 'success',
+        message: `Order placed successfully! Signature: ${signature.slice(0, 8)}...`
+      });
+      // Clear form
+      setPositionSize('');
+      setLeverage(1);
+    } else {
+      setOrderFeedback({
+        type: 'error',
+        message: error || 'Failed to place order'
+      });
+    }
+
+    // Clear feedback after 5 seconds
+    setTimeout(() => {
+      setOrderFeedback({ type: null, message: '' });
+    }, 5000);
   };
 
   // Show different UI based on account status
@@ -226,7 +290,25 @@ export function DriftTradingPanel() {
           <TradingButtons
             positionSize={positionSize}
             leverage={leverage}
+            driftService={driftService}
+            wallet={wallets[0]}
+            onOrderComplete={handleOrderComplete}
           />
+
+          {/* Order Feedback */}
+          {orderFeedback.type && (
+            <div className={`mt-4 p-3 rounded-lg ${
+              orderFeedback.type === 'success' 
+                ? 'bg-green-500/20 border border-green-500/50' 
+                : 'bg-red-500/20 border border-red-500/50'
+            }`}>
+              <p className={`text-sm ${
+                orderFeedback.type === 'success' ? 'text-green-400' : 'text-red-400'
+              }`}>
+                {orderFeedback.message}
+              </p>
+            </div>
+          )}
         </div>
       </>
     );

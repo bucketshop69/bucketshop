@@ -2,14 +2,16 @@ import { NextRequest, NextResponse } from 'next/server';
 import { DriftServerService } from '@/lib/server/DriftServerService';
 
 export async function POST(request: NextRequest) {
+  let driftService: DriftServerService | null = null;
+  
   try {
     const body = await request.json();
-    const { direction, amount, marketIndex = 0 } = body;
+    const { direction, amount, marketIndex = 0, walletAddress } = body;
 
     // Validate required parameters
-    if (!direction || !amount) {
+    if (!direction || !amount || !walletAddress) {
       return NextResponse.json(
-        { error: 'Missing required parameters: direction and amount' },
+        { error: 'Missing required parameters: direction, amount, and walletAddress' },
         { status: 400 }
       );
     }
@@ -29,7 +31,25 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order transaction
-    const driftService = new DriftServerService();
+    driftService = new DriftServerService();
+    
+    // Create a server-side wallet for transaction creation (same pattern as check-account)
+    const { PublicKey } = await import('@solana/web3.js');
+    const publicKey = new PublicKey(walletAddress);
+    const serverWallet = {
+      publicKey: publicKey,
+      signTransaction: async () => { throw new Error('Server-side wallet - signing not supported'); },
+      signAllTransactions: async () => { throw new Error('Server-side wallet - signing not supported'); },
+    };
+    
+    const connected = await driftService.connect(serverWallet as any);
+    if (!connected) {
+      return NextResponse.json(
+        { error: 'Failed to connect to Drift' },
+        { status: 500 }
+      );
+    }
+    
     const serializedTransaction = await driftService.createOrderTransaction(
       direction,
       amount,
@@ -37,11 +57,15 @@ export async function POST(request: NextRequest) {
     );
 
     if (!serializedTransaction) {
+      driftService.disconnect();
       return NextResponse.json(
         { error: 'Failed to create order transaction' },
         { status: 500 }
       );
     }
+
+    // Clean up connection to prevent leaks
+    driftService.disconnect();
 
     return NextResponse.json({
       success: true,
@@ -56,6 +80,12 @@ export async function POST(request: NextRequest) {
 
   } catch (error) {
     console.error('Error in place-order API:', error);
+    // Clean up connection in error case too
+    try {
+      driftService?.disconnect();
+    } catch (cleanupError) {
+      console.error('Error during cleanup:', cleanupError);
+    }
     return NextResponse.json(
       { error: 'Internal server error' },
       { status: 500 }

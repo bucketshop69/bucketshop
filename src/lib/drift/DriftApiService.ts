@@ -5,6 +5,10 @@ export interface AccountStatus {
   error?: string;
 }
 
+// Import the enhanced type from server service
+import type { EnhancedPerpPosition } from '@/lib/server/DriftServerService';
+export type { EnhancedPerpPosition };
+
 // Utility function to get RPC connection
 async function getSolanaConnection() {
   const { Connection } = await import('@solana/web3.js');
@@ -138,6 +142,7 @@ export class DriftApiService {
           direction,
           amount,
           marketIndex,
+          walletAddress: this.walletAddress,
         }),
       });
 
@@ -228,6 +233,39 @@ export class DriftApiService {
 
   isConnected(): boolean {
     return this.walletAddress !== null;
+  }
+
+  async getOpenPositions(): Promise<{ success: boolean; positions?: EnhancedPerpPosition[]; error?: string }> {
+    if (!this.walletAddress) {
+      return { success: false, error: 'No wallet connected' };
+    }
+
+    try {
+      const response = await fetch('/api/drift/open-positions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          walletAddress: this.walletAddress,
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) {
+        return { success: false, error: data.error || 'Failed to get open positions' };
+      }
+
+      return { success: true, positions: data.positions };
+
+    } catch (error) {
+      console.error('Get open positions error:', error);
+      return { 
+        success: false, 
+        error: error instanceof Error ? error.message : 'Failed to get open positions' 
+      };
+    }
   }
 
   disconnect(): void {

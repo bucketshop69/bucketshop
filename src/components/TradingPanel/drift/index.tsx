@@ -67,14 +67,14 @@ function LeverageSlider({ value, onChange }: { value: number; onChange: (value: 
   );
 }
 
-function TradingButtons({ 
-  positionSize, 
-  leverage, 
-  driftService, 
+function TradingButtons({
+  positionSize,
+  leverage,
+  driftService,
   wallet,
-  onOrderComplete 
-}: { 
-  positionSize: string; 
+  onOrderComplete
+}: {
+  positionSize: string;
   leverage: number;
   driftService: DriftApiService;
   wallet: any;
@@ -85,16 +85,16 @@ function TradingButtons({
 
   const placeOrder = async (direction: 'LONG' | 'SHORT') => {
     if (isPlacingOrder) return;
-    
+
     setIsPlacingOrder(true);
     setLastOrderDirection(direction);
 
     try {
       // Calculate actual position size with leverage
       const amount = parseFloat(positionSize) * leverage;
-      
+
       const result = await driftService.placeOrder(direction, amount, wallet);
-      
+
       if (result.success) {
         onOrderComplete(true, result.signature);
       } else {
@@ -125,9 +125,8 @@ function TradingButtons({
       <button
         onClick={handleLong}
         disabled={isDisabled}
-        className={`py-4 px-6 font-bold text-lg rounded-lg transition-all transform hover:scale-105 disabled:transform-none disabled:opacity-50 disabled:cursor-not-allowed ${
-          isDisabled ? '' : 'bg-green-500 hover:bg-green-600'
-        }`}
+        className={`py-4 px-6 font-bold text-lg rounded-lg transition-all transform hover:scale-105 disabled:transform-none disabled:opacity-50 disabled:cursor-not-allowed ${isDisabled ? '' : 'bg-green-500 hover:bg-green-600'
+          }`}
         style={{
           backgroundColor: isDisabled ? theme.grid.primary : undefined,
           color: theme.text.primary
@@ -138,9 +137,8 @@ function TradingButtons({
       <button
         onClick={handleShort}
         disabled={isDisabled}
-        className={`py-4 px-6 font-bold text-lg rounded-lg transition-all transform hover:scale-105 disabled:transform-none disabled:opacity-50 disabled:cursor-not-allowed ${
-          isDisabled ? '' : 'bg-red-500 hover:bg-red-600'
-        }`}
+        className={`py-4 px-6 font-bold text-lg rounded-lg transition-all transform hover:scale-105 disabled:transform-none disabled:opacity-50 disabled:cursor-not-allowed ${isDisabled ? '' : 'bg-red-500 hover:bg-red-600'
+          }`}
         style={{
           backgroundColor: isDisabled ? theme.grid.primary : undefined,
           color: theme.text.primary
@@ -152,12 +150,16 @@ function TradingButtons({
   );
 }
 
-export function DriftTradingPanel() {
-  const [positionSize, setPositionSize] = useState('');
-  const [leverage, setLeverage] = useState(1);
+interface DriftTradingPanelProps {
+  driftService?: DriftApiService;
+}
+
+export function DriftTradingPanel({ driftService: propDriftService }: DriftTradingPanelProps) {
+  const [positionSize, setPositionSize] = useState('0.1');
+  const [leverage, setLeverage] = useState(2);
   const [accountStatus, setAccountStatus] = useState<AccountStatus>({ isChecking: true, exists: false });
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [driftService] = useState(() => new DriftApiService());
+  const [driftService] = useState(() => propDriftService || new DriftApiService());
   const [orderFeedback, setOrderFeedback] = useState<{
     type: 'success' | 'error' | null;
     message: string;
@@ -168,9 +170,9 @@ export function DriftTradingPanel() {
 
   // Check account status when wallet connects
   useEffect(() => {
-    
+
     const checkAccount = async () => {
-      
+
       if (!authenticated || wallets.length === 0) {
         setAccountStatus({ isChecking: false, exists: false, error: 'Wallet not connected' });
         return;
@@ -178,23 +180,23 @@ export function DriftTradingPanel() {
 
       try {
         const wallet = wallets[0]; // Use first wallet
-        
+
         driftService.setWallet(wallet.address);
-        
+
         const status = await driftService.checkAccountStatus();
         setAccountStatus(status);
-        
-        
+
+
         // Show modal if no account exists (either no error, or the "no user" error)
         const isNoAccountError = status.error?.includes('DriftClient has no user');
         if (!status.exists && (!status.error || isNoAccountError)) {
-            setShowCreateModal(true);
+          setShowCreateModal(true);
         }
       } catch (error) {
-        setAccountStatus({ 
-          isChecking: false, 
-          exists: false, 
-          error: error instanceof Error ? error.message : 'Connection error' 
+        setAccountStatus({
+          isChecking: false,
+          exists: false,
+          error: error instanceof Error ? error.message : 'Connection error'
         });
       }
     };
@@ -249,7 +251,7 @@ export function DriftTradingPanel() {
   const renderContent = () => {
     if (!authenticated) {
       return (
-        <div className="flex items-center justify-center h-full">
+        <div className="flex items-center justify-center">
           <p style={{ color: theme.text.secondary }}>Connect wallet to start trading</p>
         </div>
       );
@@ -257,7 +259,7 @@ export function DriftTradingPanel() {
 
     if (accountStatus.isChecking) {
       return (
-        <div className="flex items-center justify-center h-full">
+        <div className="flex items-center justify-center">
           <p style={{ color: theme.text.secondary }}>Checking account...</p>
         </div>
       );
@@ -265,7 +267,7 @@ export function DriftTradingPanel() {
 
     if (accountStatus.error && !accountStatus.exists) {
       return (
-        <div className="flex items-center justify-center h-full">
+        <div className="flex items-center justify-center">
           <p style={{ color: theme.text.secondary }}>Error: {accountStatus.error}</p>
         </div>
       );
@@ -275,7 +277,7 @@ export function DriftTradingPanel() {
     return (
       <>
         <MarketDisplay />
-        
+
         <div>
           <PositionSizeInput
             value={positionSize}
@@ -297,14 +299,12 @@ export function DriftTradingPanel() {
 
           {/* Order Feedback */}
           {orderFeedback.type && (
-            <div className={`mt-4 p-3 rounded-lg ${
-              orderFeedback.type === 'success' 
-                ? 'bg-green-500/20 border border-green-500/50' 
-                : 'bg-red-500/20 border border-red-500/50'
-            }`}>
-              <p className={`text-sm ${
-                orderFeedback.type === 'success' ? 'text-green-400' : 'text-red-400'
+            <div className={`mt-4 p-3 rounded-lg ${orderFeedback.type === 'success'
+              ? 'bg-green-500/20 border border-green-500/50'
+              : 'bg-red-500/20 border border-red-500/50'
               }`}>
+              <p className={`text-sm ${orderFeedback.type === 'success' ? 'text-green-400' : 'text-red-400'
+                }`}>
                 {orderFeedback.message}
               </p>
             </div>
@@ -315,9 +315,9 @@ export function DriftTradingPanel() {
   };
 
   return (
-    <div className="h-full p-6" style={{ backgroundColor: theme.background.primary }}>
+    <div className="p-2" style={{ backgroundColor: theme.background.primary }}>
       {renderContent()}
-      
+
       <CreateAccountModal
         isOpen={showCreateModal}
         onClose={() => setShowCreateModal(false)}

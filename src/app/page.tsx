@@ -6,6 +6,7 @@ import { useSolanaWallets } from '@privy-io/react-auth/solana';
 import { TradingChart } from '@/components/TradingChart';
 import { WalletButton } from '@/components/WalletButton';
 import { DriftTradingPanel } from '@/components/TradingPanel/drift';
+import { OpenPositions } from '@/components/OpenPositions';
 import { DepositModal } from '@/components/DepositModal';
 import { DriftApiService } from '@/lib/drift/DriftApiService';
 import { theme } from '@/lib/theme';
@@ -75,8 +76,9 @@ export default function Page() {
         </div>
 
         {/* Right Section - 30% */}
-        <div className="w-[30%]" style={{ backgroundColor: theme.background.primary }}>
-          <DriftTradingPanel />
+        <div className="w-[30%] flex flex-col" style={{ backgroundColor: theme.background.primary }}>
+          <DriftTradingPanel driftService={driftService} />
+          <OpenPositions driftService={driftService} />
         </div>
       </div>
 

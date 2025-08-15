@@ -1,5 +1,5 @@
 import { Connection, Transaction, TransactionInstruction, VersionedTransaction } from '@solana/web3.js';
-import { DriftClient, initialize, Wallet, OrderType, PositionDirection } from '@drift-labs/sdk';
+import { DriftClient, initialize, Wallet, OrderType, PositionDirection, OptionalOrderParams, BN, PerpPosition } from '@drift-labs/sdk';
 
 interface DriftTradingConfig {
   rpcUrl: string;
@@ -21,6 +21,29 @@ export interface AccountStatus {
   isChecking: boolean;
   exists: boolean;
   error?: string;
+}
+
+export interface EnhancedPerpPosition {
+  // Convert all BN fields to numbers for easier client handling
+  baseAssetAmount: number;
+  lastCumulativeFundingRate: number;
+  marketIndex: number;
+  quoteAssetAmount: number;
+  quoteEntryAmount: number;
+  quoteBreakEvenAmount: number;
+  openOrders: number;
+  openBids: number;
+  openAsks: number;
+  settledPnl: number;
+  lpShares: number;
+  remainderBaseAssetAmount: number;
+  lastBaseAssetAmountPerLp: number;
+  lastQuoteAssetAmountPerLp: number;
+  perLpBase: number;
+  // Our additional fields
+  isLong: boolean;
+  isShort: boolean;
+  marketSymbol: string;
 }
 
 export class DriftServerService {
@@ -121,18 +144,18 @@ export class DriftServerService {
       // Step 1: Get the initialization instructions (same as SDK does internally)
       let initializeIxs: any[];
       let userAccountPublicKey: any;
-      
+
       try {
         const result = await this.driftClient.getInitializeUserAccountIxs(
           0, // subAccountId
           undefined, // name (optional) 
           undefined  // referrerInfo (optional)
         );
-        
+
         initializeIxs = result[0];
         userAccountPublicKey = result[1];
-        
-        
+
+
       } catch (instructionError) {
         console.error('Failed to get initialization instructions:', instructionError);
         throw instructionError;
@@ -140,7 +163,7 @@ export class DriftServerService {
 
       // Step 2: Build transaction manually from instructions (simpler approach)
       const transaction = new Transaction();
-      
+
       // Add all initialization instructions
       if (Array.isArray(initializeIxs)) {
         initializeIxs.forEach((ix: any) => {
@@ -152,17 +175,17 @@ export class DriftServerService {
 
       // Set fee payer and temporary blockhash (client will update with fresh one)
       transaction.feePayer = this.wallet!.publicKey;
-      
+
       // Set a temporary blockhash for serialization (client will replace with fresh one)
       const { blockhash } = await this.connection.getLatestBlockhash();
       transaction.recentBlockhash = blockhash;
 
       // Step 3: Serialize as unsigned transaction
-      const serializedTransaction = transaction.serialize({ 
+      const serializedTransaction = transaction.serialize({
         requireAllSignatures: false,
-        verifySignatures: false 
+        verifySignatures: false
       });
-      
+
       const base64Transaction = serializedTransaction.toString('base64');
 
       return base64Transaction;
@@ -193,7 +216,7 @@ export class DriftServerService {
       const baseAssetAmount = this.driftClient.convertToPerpPrecision(amount);
 
       // Create order parameters
-      const orderParams = {
+      const orderParams: OptionalOrderParams = {
         orderType: OrderType.MARKET,
         marketIndex,
         direction: positionDirection,
@@ -286,6 +309,85 @@ export class DriftServerService {
   async createAccount(): Promise<boolean> {
     console.log('Use createAccountTransaction() instead');
     return false;
+  }
+
+  async getOpenPositions(): Promise<EnhancedPerpPosition[]> {
+    if (!this.driftClient) {
+      console.error('DriftClient not connected');
+      return [];
+    }
+
+    try {
+      const user = this.driftClient.getUser();
+      const positions: EnhancedPerpPosition[] = [];
+
+      // Get all perp markets (typically 0-50+ markets)
+      const perpMarkets = this.driftClient.getPerpMarketAccounts();
+
+      for (let marketIndex = 0; marketIndex < perpMarkets.length; marketIndex++) {
+        try {
+          const perpPosition = user.getPerpPosition(marketIndex);
+
+          if (perpPosition && perpPosition.baseAssetAmount && !perpPosition.baseAssetAmount.eq(new BN(0))) {
+            const baseAssetAmount = perpPosition.baseAssetAmount;
+            const isLong = baseAssetAmount.gte(new BN(0));
+            const isShort = baseAssetAmount.lt(new BN(0));
+
+            // Get market info
+            const market = perpMarkets[marketIndex];
+            const marketSymbol = market ? `Market-${marketIndex}` : `Unknown-${marketIndex}`;
+
+            // Get precision factors for proper conversion
+            const baseAssetPrecision = 1e9; // SOL uses 10^9 precision
+            const quoteAssetPrecision = 1e6; // USDC uses 10^6 precision
+            const fundingPrecision = 1e9; // Funding rates use 10^9 precision
+
+            // Convert all BN values to properly scaled numbers
+            const enhancedPosition: EnhancedPerpPosition = {
+              baseAssetAmount: parseFloat(perpPosition.baseAssetAmount.toString()) / baseAssetPrecision,
+              lastCumulativeFundingRate: parseFloat(perpPosition.lastCumulativeFundingRate.toString()) / fundingPrecision,
+              marketIndex: perpPosition.marketIndex,
+              quoteAssetAmount: parseFloat(perpPosition.quoteAssetAmount.toString()) / quoteAssetPrecision,
+              quoteEntryAmount: parseFloat(perpPosition.quoteEntryAmount.toString()) / quoteAssetPrecision,
+              quoteBreakEvenAmount: parseFloat(perpPosition.quoteBreakEvenAmount.toString()) / quoteAssetPrecision,
+              openOrders: perpPosition.openOrders,
+              openBids: parseFloat(perpPosition.openBids.toString()) / baseAssetPrecision,
+              openAsks: parseFloat(perpPosition.openAsks.toString()) / baseAssetPrecision,
+              settledPnl: parseFloat(perpPosition.settledPnl.toString()) / quoteAssetPrecision,
+              lpShares: parseFloat(perpPosition.lpShares.toString()),
+              remainderBaseAssetAmount: perpPosition.remainderBaseAssetAmount,
+              lastBaseAssetAmountPerLp: parseFloat(perpPosition.lastBaseAssetAmountPerLp.toString()) / baseAssetPrecision,
+              lastQuoteAssetAmountPerLp: parseFloat(perpPosition.lastQuoteAssetAmountPerLp.toString()) / quoteAssetPrecision,
+              perLpBase: perpPosition.perLpBase,
+              // Our additional fields
+              isLong,
+              isShort,
+              marketSymbol
+            };
+
+            console.log(`🔍 Position ${marketIndex} converted:`, {
+              baseAssetAmount: enhancedPosition.baseAssetAmount,
+              quoteAssetAmount: enhancedPosition.quoteAssetAmount,
+              settledPnl: enhancedPosition.settledPnl,
+              isLong: enhancedPosition.isLong,
+              isShort: enhancedPosition.isShort
+            });
+
+            positions.push(enhancedPosition);
+          }
+        } catch (positionError) {
+          // Skip positions that can't be read (market might not exist)
+          console.log(`Skipping market ${marketIndex}:`, positionError instanceof Error ? positionError.message : 'Unknown error');
+        }
+      }
+
+      console.log(`Found ${positions.length} open positions`);
+      return positions;
+
+    } catch (error) {
+      console.error('Failed to get open positions:', error);
+      return [];
+    }
   }
 
   // Legacy method - keeping for backward compatibility

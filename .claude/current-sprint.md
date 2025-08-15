@@ -26,6 +26,12 @@
   - Create Drift account for new users via API routes
   - Hybrid transaction flow: server creates unsigned tx, client signs & submits
   - Show account status in trading UI with modal popup
+- [x] Task 4.5: Deposit System Implementation (Backend Developer) **✅ COMPLETED**
+  - **Branch**: `feature/drift-perps-trading`
+  - Add deposit button to navbar with modal interface
+  - Implement SOL deposit functionality via API routes
+  - Connect deposit flow to existing DriftServerService
+  - Add success/error feedback and wallet integration
 - [ ] Task 5: Order Execution System (Trading Backend Developer) **← CURRENT**
   - **Branch**: `feature/order-execution`
   - Connect trading buttons to actual order placement
@@ -53,10 +59,19 @@
 - [x] **Functional Trading Interface** - Users can interact with trading form ✅
 - [x] **Wallet Integration Complete** - Seamless wallet connection with Privy ✅
 - [x] **Account Setup Working** - Users can create and initialize Drift accounts ✅
+- [x] **Deposit System Working** - Users can deposit SOL for trading collateral ✅
 - [ ] **Order Execution Live** - Users can place actual market orders
-- [ ] **Learning Goal Achieved** - Co-developer understands Drift account setup and trading flow
+- [ ] **Learning Goal Achieved** - Co-developer understands complete Drift trading flow
 
 ## Next Session Instructions:
-**Role to assume**: DeFi Integration Developer specializing in account setup
-**Task**: Implement Drift account detection, creation, and initialization flow
-**Learning goal**: Understand Drift account lifecycle and user onboarding process
+**Role to assume**: Trading Backend Developer specializing in order execution
+**Task**: Implement Task 5 - Order Execution System (LONG/SHORT button functionality)
+**Learning goal**: Understand Drift market order placement and transaction handling
+
+**Current Status**: Account creation ✅ and deposit system ✅ are complete. The LONG/SHORT buttons in the trading panel are connected to order execution methods but not yet functional. The `/api/drift/place-order` endpoint exists and uses the same hybrid transaction pattern as account creation and deposits. 
+
+**Key Context**: 
+- Hybrid transaction flow working: server creates unsigned tx, client signs & submits
+- DriftServerService.createOrderTransaction() method exists but needs testing
+- Market orders use: OrderType.MARKET, PositionDirection.LONG/SHORT, baseAssetAmount
+- Users must have Drift account + SOL collateral before placing orders

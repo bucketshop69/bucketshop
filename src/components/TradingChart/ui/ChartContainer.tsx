@@ -267,7 +267,7 @@ export function ChartContainer({
 
     return (
       <div
-        className="px-6 py-4 border-b transition-colors duration-200"
+        className="p-2 border-b transition-colors duration-200"
         style={{
           backgroundColor: isDark ? colors.background.secondary : '#ffffff',
           borderColor: isDark ? colors.grid.secondary : '#e5e7eb',

@@ -1,5 +1,5 @@
 import { Connection, Transaction, TransactionInstruction, VersionedTransaction } from '@solana/web3.js';
-import { DriftClient, initialize, Wallet, OrderType, PositionDirection, OptionalOrderParams, BN, PerpPosition } from '@drift-labs/sdk';
+import { DriftClient, initialize, Wallet, OrderType, PositionDirection, OptionalOrderParams, BN, PerpPosition, UserAccount } from '@drift-labs/sdk';
 
 interface DriftTradingConfig {
   rpcUrl: string;
@@ -17,10 +17,12 @@ const DEFAULT_CONFIG: DriftTradingConfig = {
   })(),
 };
 
+
 export interface AccountStatus {
   isChecking: boolean;
   exists: boolean;
   error?: string;
+  user: UserAccount | null
 }
 
 export interface EnhancedPerpPosition {
@@ -54,7 +56,11 @@ export class DriftServerService {
 
   constructor(config: Partial<DriftTradingConfig> = {}) {
     this.config = { ...DEFAULT_CONFIG, ...config };
-    this.connection = new Connection(this.config.rpcUrl);
+    // Use connection with rate limiting
+    this.connection = new Connection(this.config.rpcUrl, {
+      commitment: 'confirmed',
+      confirmTransactionInitialTimeout: 60000,
+    });
   }
 
   async connect(wallet: Wallet): Promise<boolean> {
@@ -80,7 +86,7 @@ export class DriftServerService {
 
   async checkAccountStatus(): Promise<AccountStatus> {
     if (!this.driftClient) {
-      return { isChecking: false, exists: false, error: 'Not connected' };
+      return { isChecking: false, exists: false, error: 'Not connected', user: null };
     }
 
     try {
@@ -100,6 +106,7 @@ export class DriftServerService {
         return {
           isChecking: false,
           exists,
+          user: userAccount.getUserAccount()
         };
       } catch (getUserError) {
         console.log('👤 getUser() failed, checking if this means no account exists');
@@ -112,6 +119,7 @@ export class DriftServerService {
           return {
             isChecking: false,
             exists: false,
+            user: null
           };
         }
 
@@ -129,6 +137,7 @@ export class DriftServerService {
         isChecking: false,
         exists: false,
         error: error instanceof Error ? error.message : 'Unknown error',
+        user: null
       };
     }
   }

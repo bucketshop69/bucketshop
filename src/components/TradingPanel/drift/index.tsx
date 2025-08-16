@@ -6,16 +6,35 @@ import { useSolanaWallets } from '@privy-io/react-auth/solana';
 import { theme } from '@/lib/theme';
 import { CreateAccountModal } from '@/components/CreateAccountModal';
 import { DriftApiService, AccountStatus } from '@/lib/drift/DriftApiService';
+import { useMarketStore, selectSelectedSymbol, selectMarketDisplayName } from '@/components/TradingChart/data/marketStore';
+import { useChartStore, selectCurrentPrice, selectMetrics } from '@/components/TradingChart/data/chartStore';
 
 function MarketDisplay() {
-  // TODO: Get selected market from chart context
-  const selectedMarket = 'SOL-PERP';
-  const currentPrice = '$64.25';
+  // Get real market data from stores
+  const selectedSymbol = useMarketStore(selectSelectedSymbol);
+  const marketDisplayName = useMarketStore(selectMarketDisplayName);
+  const currentPrice = useChartStore(selectCurrentPrice);
+  const metrics = useChartStore(selectMetrics);
+
+  // Format the market name (remove -PERP suffix for cleaner display)
+  const displayMarket = selectedSymbol || 'SOL-PERP';
+
+  // Format price with proper currency symbol and change indicator
+  const formattedPrice = currentPrice > 0 ? `$${currentPrice.toFixed(2)}` : '$--';
+  const priceChangePercent = metrics.priceChangePercent;
+  const isPositive = priceChangePercent >= 0;
+  const priceColorClass = isPositive ? 'text-green-400' : 'text-red-400';
 
   return (
-    <div className="border-b pb-4 mb-6" style={{ borderColor: theme.grid.primary }}>
-      <div className="text-lg font-semibold" style={{ color: theme.text.primary }}>{selectedMarket}</div>
-      <div className="text-2xl font-bold text-green-400">{currentPrice}</div>
+    <div className="border-b pb-2 flex items-center" style={{ borderColor: theme.grid.primary }}>
+      <div className="flex items-center gap-2">
+        <div className={`text-2xl font-bold ${priceColorClass}`}>
+          {formattedPrice}
+        </div>
+      </div>
+      <div className="text-lg font-semibold" style={{ color: theme.text.primary }}>
+        {displayMarket}
+      </div>
     </div>
   );
 }
@@ -125,7 +144,9 @@ function TradingButtons({
       <button
         onClick={handleLong}
         disabled={isDisabled}
-        className={`py-4 px-6 font-bold text-lg rounded-lg transition-all transform hover:scale-105 disabled:transform-none disabled:opacity-50 disabled:cursor-not-allowed ${isDisabled ? '' : 'bg-green-500 hover:bg-green-600'
+        className={`py-2 px-3 font-bold text-lg rounded-lg transition-all cursor-pointer
+          transform hover:scale-105 disabled:transform-none disabled:opacity-50 
+          disabled:cursor-not-allowed ${isDisabled ? '' : 'bg-green-500 hover:bg-green-600'
           }`}
         style={{
           backgroundColor: isDisabled ? theme.grid.primary : undefined,
@@ -137,7 +158,9 @@ function TradingButtons({
       <button
         onClick={handleShort}
         disabled={isDisabled}
-        className={`py-4 px-6 font-bold text-lg rounded-lg transition-all transform hover:scale-105 disabled:transform-none disabled:opacity-50 disabled:cursor-not-allowed ${isDisabled ? '' : 'bg-red-500 hover:bg-red-600'
+        className={`py-4 px-6 font-bold text-lg rounded-lg transition-all cursor-pointer
+           transform hover:scale-105 disabled:transform-none disabled:opacity-50
+            disabled:cursor-not-allowed ${isDisabled ? '' : 'bg-red-500 hover:bg-red-600'
           }`}
         style={{
           backgroundColor: isDisabled ? theme.grid.primary : undefined,

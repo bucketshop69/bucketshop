@@ -1,7 +1,8 @@
 import { create } from 'zustand';
 import { useEffect } from 'react';
 import { marketsApi, ExtendedMarketData } from '@/lib/api/marketsApi';
-import { PerpMarketConfig } from './MarketConfig';
+import { PerpMarketConfig } from '@drift-labs/sdk';
+
 export interface MarketState {
   // Current market selection
   selectedSymbol: string;

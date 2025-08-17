@@ -6,13 +6,16 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "generate-cron-secret": "node scripts/generate-cron-secret.js",
+    "test-cron": "node scripts/test-cron.js"
   },
   "dependencies": {
     "@coral-xyz/anchor": "^0.28.0",
     "@drift-labs/sdk": "^2.129.0",
     "@privy-io/react-auth": "^2.21.2",
     "@radix-ui/react-select": "^2.2.5",
+    "@upstash/redis": "^1.35.3",
     "buffer": "^6.0.3",
     "clsx": "^2.1.1",
     "lightweight-charts": "^5.0.8",

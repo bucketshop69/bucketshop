@@ -1,0 +1,24 @@
+{
+  "crons": [
+    {
+      "path": "/api/drift/cron/update-markets",
+      "schedule": "0 * * * * *"
+    }
+  ],
+  "functions": {
+    "src/app/api/drift/cron/update-markets/route.ts": {
+      "maxDuration": 30
+    }
+  },
+  "headers": [
+    {
+      "source": "/api/drift/markets",
+      "headers": [
+        {
+          "key": "Cache-Control",
+          "value": "public, s-maxage=30, stale-while-revalidate=60"
+        }
+      ]
+    }
+  ]
+}

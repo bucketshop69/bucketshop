@@ -238,15 +238,7 @@ export function DriftTradingPanel({ driftService: propDriftService }: DriftTradi
 
   // Show trading interface when wallet is connected (no pre-auth needed)
   const renderContent = () => {
-    if (!authenticated) {
-      return (
-        <div className="flex items-center justify-center h-full">
-          <p style={{ color: theme.text.secondary }}>Connect wallet to start trading</p>
-        </div>
-      );
-    }
 
-    // Always show trading interface when wallet is connected
     return (
       <>
         <MarketDisplay />

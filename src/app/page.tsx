@@ -10,7 +10,7 @@ import { OpenPositions } from '@/components/OpenPositions';
 import { DepositModal } from '@/components/DepositModal';
 import TabNavigation from '@/components/core/TabNavigation';
 import MarketList from '@/components/core/MarketList';
-import { useMarketStore, selectSelectedSymbol, selectAvailableMarkets, useMarketInitialization } from '@/components/TradingChart/data/marketStore';
+import { useMarketStore, selectSelectedSymbol, useMarketInitialization } from '@/components/TradingChart/data/marketStore';
 import { DriftApiService } from '@/lib/drift/DriftApiService';
 import { theme } from '@/lib/theme';
 
@@ -18,13 +18,12 @@ export default function Page() {
   const [showDepositModal, setShowDepositModal] = useState(false);
   const [activeTab, setActiveTab] = useState('markets');
   const [driftService] = useState(() => new DriftApiService());
-  
+
   const { authenticated } = usePrivy();
   const { wallets } = useSolanaWallets();
 
   // Market store state and actions
   const selectedSymbol = useMarketStore(selectSelectedSymbol);
-  const availableMarkets = useMarketStore(selectAvailableMarkets);
   const { selectMarket } = useMarketStore();
 
   // Initialize markets on mount
@@ -49,10 +48,10 @@ export default function Page() {
     try {
       const wallet = wallets[0];
       driftService.setWallet(wallet.address);
-      
+
       // Use marketIndex 1 for SOL deposits (0 is USDC)
       const result = await driftService.deposit(amount, wallet, 1);
-      
+
       if (result.success) {
         console.log('Deposit successful! Signature:', result.signature);
         return true;
@@ -72,7 +71,7 @@ export default function Page() {
       <div className="flex justify-between items-center p-4 border-b"
         style={{ backgroundColor: theme.background.primary, borderColor: theme.grid.primary }}>
         <h3 className="text-l font-bold">BucketShop</h3>
-        
+
         {/* Navigation Buttons */}
         <div className="flex items-center gap-3">
           <button
@@ -99,22 +98,20 @@ export default function Page() {
 
         {/* Right Section - 30% */}
         <div className="w-[30%] flex flex-col" style={{ backgroundColor: theme.background.primary }}>
-          <TabNavigation 
+          <TabNavigation
             activeTab={activeTab}
             onTabChange={handleTabChange}
           />
-          
+
           {/* Tab Content */}
           <div className="flex-1 flex flex-col">
             {activeTab === 'markets' ? (
-              <MarketList
-                selectedSymbol={selectedSymbol}
-                availableMarkets={availableMarkets.map(market => ({
-                  symbol: market.config.symbol,
-                  displayName: market.displayName
-                }))}
-                onMarketSelect={handleMarketSelect}
-              />
+              <div className="flex-1 flex flex-col">
+                <MarketList
+                  selectedSymbol={selectedSymbol}
+                  onMarketSelect={handleMarketSelect}
+                />
+              </div>
             ) : (
               <>
                 <DriftTradingPanel driftService={driftService} />

@@ -14,18 +14,27 @@ export function cleanVolumeData(raw: any): DriftVolumeResponse | null {
       return null;
     }
     
-    if (typeof raw.volume24h !== 'number' || raw.volume24h < 0) {
-      console.warn(`⚠️ Invalid volume for ${raw.symbol}`);
+    if (!raw.quoteVolume || typeof raw.quoteVolume !== 'string') {
+      console.warn(`⚠️ Invalid quoteVolume for ${raw.symbol}`);
+      return null;
+    }
+    
+    if (!raw.baseVolume || typeof raw.baseVolume !== 'string') {
+      console.warn(`⚠️ Invalid baseVolume for ${raw.symbol}`);
+      return null;
+    }
+    
+    if (typeof raw.marketIndex !== 'number') {
+      console.warn(`⚠️ Invalid marketIndex for ${raw.symbol}`);
       return null;
     }
     
     return {
       symbol: raw.symbol.trim(),
-      marketName: raw.marketName || raw.symbol,
-      volume24h: raw.volume24h,
-      volumeChange24h: typeof raw.volumeChange24h === 'number' ? raw.volumeChange24h : 0,
-      price: typeof raw.price === 'number' ? raw.price : 0,
-      priceChange24h: typeof raw.priceChange24h === 'number' ? raw.priceChange24h : 0,
+      quoteVolume: raw.quoteVolume,
+      baseVolume: raw.baseVolume,
+      marketIndex: raw.marketIndex,
+      marketType: raw.marketType || 'unknown',
     };
     
   } catch (error) {

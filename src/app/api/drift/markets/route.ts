@@ -31,9 +31,12 @@ function validateMarketData(data: unknown): data is MarketData {
   return (
     typeof market.symbol === 'string' &&
     typeof market.displayName === 'string' &&
-    typeof market.price === 'number' &&
-    typeof market.priceChange24h === 'number' &&
-    typeof market.volume24h === 'number' &&
+    (market.price === null || typeof market.price === 'number') &&
+    (market.priceChange24h === null || typeof market.priceChange24h === 'number') &&
+    typeof market.quoteVolume === 'number' &&
+    typeof market.baseVolume === 'number' &&
+    typeof market.marketIndex === 'number' &&
+    typeof market.marketType === 'string' &&
     typeof market.openInterest === 'number' &&
     typeof market.lastUpdated === 'number'
   );
@@ -50,15 +53,13 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarketsRes
   const startTime = Date.now();
   
   try {
-    console.log('📊 Client requesting market data...');
-    
-    // Step 1: Get all market data from Redis
+    // Get all market data from Redis
     const marketData = await redisHelpers.getAllMarketData();
     
-    // Step 2: Get last update timestamp
+    // Get last update timestamp
     const lastUpdated = await redisHelpers.getLastUpdate();
     
-    // Step 3: Validate data quality
+    // Validate data quality
     const validMarkets = marketData.filter(validateMarketData);
     
     if (validMarkets.length !== marketData.length) {
@@ -66,7 +67,7 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarketsRes
       console.warn(`⚠️ Filtered out ${invalidCount} invalid market records`);
     }
     
-    // Step 4: Check if data is reasonably fresh (within 5 minutes)
+    // Check if data is reasonably fresh (within 5 minutes)
     const cacheAge = calculateCacheAge(lastUpdated);
     const isStale = cacheAge && cacheAge > 300; // 5 minutes
     
@@ -74,12 +75,10 @@ export async function GET(request: NextRequest): Promise<NextResponse<MarketsRes
       console.warn(`⚠️ Market data is ${cacheAge} seconds old`);
     }
     
-    // Step 5: Sort markets by volume (most active first)
-    const sortedMarkets = validMarkets.sort((a, b) => b.volume24h - a.volume24h);
+    // Sort markets by volume (most active first)
+    const sortedMarkets = validMarkets.sort((a, b) => b.quoteVolume - a.quoteVolume);
     
     const duration = Date.now() - startTime;
-    
-    console.log(`✅ Served ${sortedMarkets.length} markets in ${duration}ms`);
     
     // Step 6: Create response
     const response: MarketsResponse = {

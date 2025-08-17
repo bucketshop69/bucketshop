@@ -49,20 +49,25 @@
     - ✅ Set up `vercel.json` cron configuration for 60-second intervals
     - ✅ Add authentication for cron endpoint security
     - ✅ Test cron job execution and monitoring
-- [ ] Task 5: Enhanced Market Table UI (UI/UX Specialist)
+- [x] Task 5: Basic Market List with Volume Data (Frontend Specialist) **← COMPLETED**
   - **Branch**: `feature/market-discovery-interface`
-  - Convert MarketList from simple list to data table format
-  - Add columns: Symbol, Price, 24h Change, Volume, Open Interest
-  - Integrate with new backend API for real-time market data
-  - Loading states and error handling for market data
-  - Responsive table design for 30% panel constraints
-- [ ] Task 6: Market Data Integration & Polish (Full-stack Integration)
+  - ✅ Enhanced MarketList component with real Drift API data
+  - ✅ Display symbol, market type, and formatted volume
+  - ✅ SWR integration for data fetching and auto-refresh
+  - ✅ Auto-refresh logic for empty data states
+  - ✅ Clean production-ready logging
+- [ ] Task 6: Fix Open Interest Data Pipeline (Backend API Specialist) **← CURRENT**
   - **Branch**: `feature/market-discovery-interface`
-  - Connect MarketList component to new `/api/drift/markets` endpoint
-  - Implement SWR for efficient data fetching and caching
-  - Add auto-refresh every 60 seconds to sync with backend updates
-  - Visual polish: selection states, hover effects, sorting capabilities
-  - Error boundaries and fallback states for API failures
+  - Debug why all markets show `openInterest: 0`
+  - Investigate Drift `/amm/openInterest` API endpoint
+  - Fix OI data aggregation in market service
+  - Verify OI data appears correctly in Redis and client API
+- [ ] Task 7: Add Price Data Integration (Backend API Specialist)
+  - **Branch**: `feature/market-discovery-interface`
+  - Research Drift price data sources (spot vs perp pricing)
+  - Integrate price data into market aggregation service
+  - Add 24h price change calculations if available
+  - Update MarketData interface and validation
 
 ## Backend Architecture & Implementation:
 **Primary Stack**:
@@ -91,10 +96,13 @@
 - [x] **Functional Market List** - Users can browse and select markets from scrollable list
 - [x] **Seamless Chart Integration** - Market selection updates chart area automatically
 - [x] **Clean Tab Interface** - Smooth switching between Markets and Trade tabs
-- [ ] **Real-time Market Data** - Live price, volume, and OI data from Drift API
-- [ ] **Professional Table UI** - Sortable columns with proper data formatting
-- [ ] **Robust Data Pipeline** - Backend service with error handling and fallbacks
-- [ ] **Learning Goal** - Full-stack data architecture with Redis caching patterns
+- [x] **Volume Data Pipeline** - Live volume data from Drift API working correctly
+- [x] **Auto-refresh System** - Empty data triggers automatic backend refresh
+- [x] **Production Logging** - Clean, focused logging for production deployment
+- [ ] **Open Interest Data** - Fix OI pipeline to show real market data
+- [ ] **Price Data Integration** - Add live price and 24h change data
+- [ ] **Complete Market Data** - All fields populated with real-time information
+- [ ] **Learning Goal** - Complex external API integration with data aggregation
 
 ## Deployment Checklist:
 Before testing/deploying this sprint, ensure:
@@ -106,6 +114,18 @@ Before testing/deploying this sprint, ensure:
 - [ ] **Background Job**: Verify `/api/drift/cron/update-markets` executes successfully
 
 ## Next Session Instructions:
-**Role to assume**: Backend Specialist for market data infrastructure
-**Task**: Implement Drift API Integration Service (Task 4.2)
-**Learning goal**: External API integration patterns, error handling, and data transformation
+**Role to assume**: Backend API Specialist for data pipeline debugging
+**Task**: Fix Open Interest Data Pipeline (Task 6)
+**Learning goal**: API debugging, data aggregation troubleshooting, and external API integration patterns
+
+## Current Data Issues:
+- ✅ **Volume Data**: Working correctly ($86.6M, $69.4M, etc.)
+- ❌ **Open Interest**: All markets showing `openInterest: 0`
+- ❌ **Price Data**: All markets showing `price: null` and `priceChange24h: null`
+
+## Investigation Plan:
+1. **Debug OI API**: Test `/amm/openInterest` endpoint directly
+2. **Review OI Service**: Check `openInterest.ts` data processing
+3. **Fix Data Aggregation**: Ensure OI data flows correctly to Redis
+4. **Research Price Sources**: Find appropriate Drift price endpoints
+5. **Integrate Price Data**: Add price fetching to market service

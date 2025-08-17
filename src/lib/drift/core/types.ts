@@ -2,11 +2,16 @@
 
 export interface DriftVolumeResponse {
   symbol: string;
-  marketName: string;
-  volume24h: number;
-  volumeChange24h?: number;
-  price?: number;
-  priceChange24h?: number;
+  quoteVolume: string;
+  baseVolume: string;
+  marketIndex: number;
+  marketType: string;
+}
+
+export interface DriftVolumeApiResponse {
+  success: boolean;
+  total: string;
+  markets: DriftVolumeResponse[];
 }
 
 export interface DriftOpenInterestResponse {
@@ -17,9 +22,12 @@ export interface DriftOpenInterestResponse {
 export interface DriftMarketData {
   symbol: string;
   displayName: string;
-  price: number;
-  priceChange24h: number;
-  volume24h: number;
+  price: number | null;           // Will be null until we get price source
+  priceChange24h: number | null;  // Will be null until we get price source
+  quoteVolume: number;            // From quoteVolume string conversion
+  baseVolume: number;             // From baseVolume string conversion
+  marketIndex: number;
+  marketType: string;
   openInterest: number;
   lastUpdated: number;
 }

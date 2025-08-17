@@ -9,12 +9,19 @@ export function createMarketData(
   volumeData: DriftVolumeResponse,
   openInterest: number
 ): DriftMarketData {
+  // Convert volume strings to numbers
+  const quoteVolumeNum = parseFloat(volumeData.quoteVolume) || 0;
+  const baseVolumeNum = parseFloat(volumeData.baseVolume) || 0;
+  
   return {
     symbol: volumeData.symbol,
-    displayName: volumeData.marketName || volumeData.symbol,
-    price: volumeData.price || 0,
-    priceChange24h: volumeData.priceChange24h || 0,
-    volume24h: volumeData.volume24h,
+    displayName: volumeData.symbol, // Use symbol as display name for now
+    price: null, // Will be null until we get price source
+    priceChange24h: null, // Will be null until we get price source
+    quoteVolume: quoteVolumeNum,
+    baseVolume: baseVolumeNum,
+    marketIndex: volumeData.marketIndex,
+    marketType: volumeData.marketType,
     openInterest,
     lastUpdated: Date.now()
   };

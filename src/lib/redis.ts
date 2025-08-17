@@ -31,9 +31,12 @@ export const redisKeys = {
 export interface MarketData {
   symbol: string;
   displayName: string;
-  price: number;
-  priceChange24h: number;
-  volume24h: number;
+  price: number | null;           // Will be null until we get price source
+  priceChange24h: number | null;  // Will be null until we get price source
+  quoteVolume: number;            // From Drift quoteVolume
+  baseVolume: number;             // From Drift baseVolume
+  marketIndex: number;
+  marketType: string;
   openInterest: number;
   lastUpdated: number;
 }
@@ -61,26 +64,60 @@ export interface UpdateStatus {
 
 // Redis helper functions for common operations
 export const redisHelpers = {
-  // Set market data with TTL (2 minutes safety buffer)
+  // Set market data with TTL (5 minutes safety buffer)
   setMarketData: async (symbol: string, data: MarketData) => {
-    return redis.setex(redisKeys.market(symbol), 120, JSON.stringify(data));
+    return redis.setex(redisKeys.market(symbol), 300, JSON.stringify(data));
   },
 
   // Get single market data
   getMarketData: async (symbol: string): Promise<MarketData | null> => {
     const data = await redis.get(redisKeys.market(symbol));
-    return data ? JSON.parse(data as string) : null;
+    if (!data) return null;
+    
+    // Upstash Redis automatically deserializes JSON
+    if (typeof data === 'object') {
+      return data as MarketData;
+    } else if (typeof data === 'string') {
+      return JSON.parse(data);
+    }
+    return null;
   },
 
   // Get all market data
   getAllMarketData: async (): Promise<MarketData[]> => {
     const keys = await redis.keys('drift:market:*');
-    if (keys.length === 0) return [];
+    
+    if (keys.length === 0) {
+      return [];
+    }
     
     const marketDataArray = await redis.mget(...keys);
-    return marketDataArray
-      .map(data => data ? JSON.parse(data as string) : null)
+    
+    const results = marketDataArray
+      .map((data, index) => {
+        if (!data) {
+          return null;
+        }
+        
+        if (typeof data === 'object') {
+          // Data is already an object, return directly
+          return data as MarketData;
+        } else if (typeof data === 'string') {
+          // Fallback: if it's a string, parse it
+          try {
+            return JSON.parse(data);
+          } catch (parseError) {
+            console.error(`❌ Failed to parse market data for ${keys[index]}:`, parseError);
+            return null;
+          }
+        } else {
+          console.error(`❌ Unexpected data type for ${keys[index]}: ${typeof data}`);
+          return null;
+        }
+      })
       .filter((data): data is MarketData => data !== null);
+    
+    return results;
   },
 
   // Set update status

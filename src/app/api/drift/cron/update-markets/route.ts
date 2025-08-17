@@ -45,28 +45,20 @@ export async function GET(request: NextRequest) {
     await redisHelpers.setUpdateStatus(updateStatus);
     
     // Step 1: Health check on Drift API
-    console.log('🩺 Checking Drift API health...');
     const isHealthy = await driftApiService.healthCheck();
     
     if (!isHealthy) {
       throw new Error('Drift API health check failed');
     }
     
-    console.log('✅ Drift API is healthy');
-    
     // Step 2: Fetch fresh market data
-    console.log('📊 Fetching market data from Drift...');
     const marketData = await driftApiService.getAllMarketData();
     
     if (marketData.length === 0) {
       throw new Error('No market data received from Drift API');
     }
     
-    console.log(`📈 Retrieved ${marketData.length} markets`);
-    
     // Step 3: Store data in Redis using pipeline for efficiency
-    console.log('💾 Storing data in Redis...');
-    
     const pipeline = redis.pipeline();
     const timestamp = Date.now();
     
@@ -74,13 +66,33 @@ export async function GET(request: NextRequest) {
     for (const market of marketData) {
       const marketKey = `drift:market:${market.symbol}`;
       
-      // Set with 2-minute TTL (safety buffer)
-      pipeline.setex(marketKey, 120, JSON.stringify(market));
+      try {
+        const jsonString = JSON.stringify(market);
+        // Set with 5-minute TTL (safety buffer for cron delays)
+        pipeline.setex(marketKey, 300, jsonString);
+      } catch (serializeError) {
+        console.error(`❌ Failed to serialize ${market.symbol}:`, serializeError);
+        
+        // Store a safe fallback version
+        const safeMarket = {
+          symbol: market.symbol,
+          displayName: market.displayName || market.symbol,
+          price: market.price,
+          priceChange24h: market.priceChange24h,
+          quoteVolume: market.quoteVolume,
+          baseVolume: market.baseVolume,
+          marketIndex: market.marketIndex,
+          marketType: market.marketType,
+          openInterest: market.openInterest,
+          lastUpdated: Date.now()
+        };
+        pipeline.setex(marketKey, 300, JSON.stringify(safeMarket));
+      }
     }
     
     // Store metadata
     pipeline.set('drift:last_update', timestamp);
-    pipeline.setex('drift:markets_count', 120, marketData.length);
+    pipeline.setex('drift:markets_count', 300, marketData.length);
     
     // Execute all Redis operations at once
     await pipeline.exec();
@@ -95,9 +107,6 @@ export async function GET(request: NextRequest) {
     await redisHelpers.setUpdateStatus(successStatus);
     
     const duration = Date.now() - startTime;
-    
-    console.log(`🎉 Market data update completed successfully in ${duration}ms`);
-    console.log(`📊 Updated ${marketData.length} markets`);
     
     // Return success response
     return NextResponse.json({

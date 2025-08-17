@@ -1,32 +1,104 @@
 'use client';
 
+import { useState, useEffect } from 'react';
+import useSWR from 'swr';
 import { theme } from '@/lib/theme';
 
-interface MarketOption {
+interface MarketData {
   symbol: string;
-  displayName?: string;
+  displayName: string;
+  price: number | null;
+  priceChange24h: number | null;
+  quoteVolume: number;
+  baseVolume: number;
+  marketIndex: number;
+  marketType: string;
+  openInterest: number;
+  lastUpdated: number;
+}
+
+interface MarketsApiResponse {
+  success: boolean;
+  markets: MarketData[];
+  count: number;
+  lastUpdated: number | null;
+  message?: string;
 }
 
 interface MarketListProps {
   selectedSymbol: string;
-  availableMarkets: MarketOption[];
-  isLoading?: boolean;
   onMarketSelect: (symbol: string) => void;
 }
 
+// Format volume to readable format
+function formatVolume(volume: number): string {
+  if (volume >= 1_000_000) {
+    return `$${(volume / 1_000_000).toFixed(1)}M`;
+  } else if (volume >= 1_000) {
+    return `$${(volume / 1_000).toFixed(1)}K`;
+  } else {
+    return `$${volume.toFixed(2)}`;
+  }
+}
+
+// Fetcher function for SWR
+const fetcher = (url: string) => fetch(url).then((res) => res.json());
+
 export default function MarketList({
   selectedSymbol,
-  availableMarkets,
-  isLoading = false,
   onMarketSelect
 }: MarketListProps) {
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [hasTriggeredRefresh, setHasTriggeredRefresh] = useState(false);
 
-  if (isLoading) {
+  // Fetch market data from our API
+  const { data, error, isLoading, mutate } = useSWR<MarketsApiResponse>(
+    '/api/drift/markets',
+    fetcher,
+    {
+      refreshInterval: 60000, // Refresh every 60 seconds
+      revalidateOnFocus: false
+    }
+  );
+
+  // Auto-trigger backend refresh when markets are empty
+  useEffect(() => {
+    if (data?.success && data.markets.length === 0 && !isLoading && !hasTriggeredRefresh) {
+      setIsRefreshing(true);
+      setHasTriggeredRefresh(true);
+      
+      // Trigger server-side refresh
+      fetch('/api/drift/markets/refresh', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      })
+      .then(response => response.json())
+      .then(() => {
+        // Wait 2 seconds then refresh the data
+        setTimeout(() => {
+          mutate(); // Revalidate SWR data
+          setIsRefreshing(false);
+        }, 2000);
+      })
+      .catch(error => {
+        console.error('❌ Server refresh failed:', error);
+        setIsRefreshing(false);
+        // Reset flag so user can try again
+        setHasTriggeredRefresh(false);
+      });
+    }
+  }, [data, isLoading, hasTriggeredRefresh, mutate]);
+
+  if (isLoading || isRefreshing) {
     return (
       <div className="w-full h-full flex flex-col">
         <div className="p-4 border-b" style={{ borderColor: theme.grid.primary }}>
           <div className="flex items-center gap-2">
-            <span style={{ color: theme.text.secondary }}>Loading markets...</span>
+            <span style={{ color: theme.text.secondary }}>
+              {isRefreshing ? 'Refreshing market data...' : 'Loading markets...'}
+            </span>
             <div
               className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"
               style={{ borderColor: theme.text.secondary }}
@@ -37,7 +109,21 @@ export default function MarketList({
     );
   }
 
-  if (availableMarkets.length === 0) {
+  if (error || !data?.success) {
+    return (
+      <div className="w-full h-full flex flex-col">
+        <div className="p-4 text-center">
+          <span style={{ color: theme.text.secondary }}>
+            Failed to load markets
+          </span>
+        </div>
+      </div>
+    );
+  }
+
+  const markets = data.markets || [];
+
+  if (markets.length === 0) {
     return (
       <div className="w-full h-full flex flex-col">
         <div className="p-4 text-center">
@@ -53,7 +139,7 @@ export default function MarketList({
     <div className="w-full h-full flex flex-col">
       {/* Markets List */}
       <div className="flex-1 overflow-y-auto">
-        {availableMarkets.map((market) => (
+        {markets.map((market) => (
           <button
             key={market.symbol}
             onClick={() => onMarketSelect(market.symbol)}
@@ -73,26 +159,29 @@ export default function MarketList({
             <div className="flex items-center justify-between">
               <div className="flex flex-col">
                 <span className="font-semibold text-sm">
-                  {market.displayName || market.symbol}
+                  {market.symbol}
                 </span>
-                {market.symbol !== (market.displayName || market.symbol) && (
+                <span
+                  className="text-xs opacity-60"
+                  style={{ color: theme.text.secondary }}
+                >
+                  {market.marketType.toUpperCase()}
+                </span>
+              </div>
+
+              <div className="flex flex-col items-end">
+                <span className="text-sm font-medium">
+                  {formatVolume(market.quoteVolume)}
+                </span>
+                {market.symbol === selectedSymbol && (
                   <span
-                    className="text-xs opacity-60"
+                    className="text-xs font-medium"
                     style={{ color: theme.text.secondary }}
                   >
-                    {market.symbol}
+                    Current
                   </span>
                 )}
               </div>
-
-              {market.symbol === selectedSymbol && (
-                <span
-                  className="text-xs font-medium"
-                  style={{ color: theme.text.secondary }}
-                >
-                  Current
-                </span>
-              )}
             </div>
           </button>
         ))}

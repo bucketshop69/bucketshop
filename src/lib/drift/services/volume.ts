@@ -2,8 +2,8 @@
 
 import { fetchWithTimeout, withRetry, DEFAULT_CONFIG } from '../core/client';
 import { DriftAPIError } from '../core/errors';
-import type { DriftVolumeResponse } from '../core/types';
-import { cleanVolumeData, validateArrayResponse } from '../utils/validation';
+import type { DriftVolumeResponse, DriftVolumeApiResponse } from '../core/types';
+import { cleanVolumeData } from '../utils/validation';
 
 /**
  * Fetch 24-hour volume data for all markets
@@ -16,17 +16,20 @@ export async function getVolume24h(): Promise<DriftVolumeResponse[]> {
     console.log('📊 Fetching 24h volume data from Drift...');
     
     const response = await fetchWithTimeout(endpoint);
-    const data = await response.json();
+    const data = await response.json() as DriftVolumeApiResponse;
     
     // Validate response structure
-    const validatedData = validateArrayResponse(data, endpoint);
+    if (!data.success || !Array.isArray(data.markets)) {
+      throw new DriftAPIError('Invalid volume API response structure', endpoint);
+    }
     
     // Clean and validate each market's data
-    const cleanedData = validatedData
+    const cleanedData = data.markets
       .map(cleanVolumeData)
       .filter(item => item !== null) as DriftVolumeResponse[];
     
     console.log(`✅ Successfully fetched ${cleanedData.length} markets volume data`);
+    console.log(`📊 Total volume: ${data.total}`);
     return cleanedData;
   });
 }

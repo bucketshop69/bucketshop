@@ -180,7 +180,7 @@ interface DriftTradingPanelProps {
 export function DriftTradingPanel({ driftService: propDriftService }: DriftTradingPanelProps) {
   const [positionSize, setPositionSize] = useState('0.1');
   const [leverage, setLeverage] = useState(2);
-  const [accountStatus, setAccountStatus] = useState<AccountStatus>({ isChecking: true, exists: false });
+  const [accountStatus, setAccountStatus] = useState<AccountStatus>({ isChecking: false, exists: true }); // Default to allow trading
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [driftService] = useState(() => propDriftService || new DriftApiService());
   const [orderFeedback, setOrderFeedback] = useState<{
@@ -191,41 +191,7 @@ export function DriftTradingPanel({ driftService: propDriftService }: DriftTradi
   const { authenticated } = usePrivy();
   const { wallets } = useSolanaWallets();
 
-  // Check account status when wallet connects
-  useEffect(() => {
-
-    const checkAccount = async () => {
-
-      if (!authenticated || wallets.length === 0) {
-        setAccountStatus({ isChecking: false, exists: false, error: 'Wallet not connected' });
-        return;
-      }
-
-      try {
-        const wallet = wallets[0]; // Use first wallet
-
-        driftService.setWallet(wallet.address);
-
-        const status = await driftService.checkAccountStatus();
-        setAccountStatus(status);
-
-
-        // Show modal if no account exists (either no error, or the "no user" error)
-        const isNoAccountError = status.error?.includes('DriftClient has no user');
-        if (!status.exists && (!status.error || isNoAccountError)) {
-          setShowCreateModal(true);
-        }
-      } catch (error) {
-        setAccountStatus({
-          isChecking: false,
-          exists: false,
-          error: error instanceof Error ? error.message : 'Connection error'
-        });
-      }
-    };
-
-    checkAccount();
-  }, [authenticated, wallets, driftService]);
+  // Removed automatic account checking - will check only when user tries to trade
 
   const handleCreateAccount = async (): Promise<boolean> => {
     if (wallets.length === 0) {
@@ -270,33 +236,17 @@ export function DriftTradingPanel({ driftService: propDriftService }: DriftTradi
     }, 5000);
   };
 
-  // Show different UI based on account status
+  // Show trading interface when wallet is connected (no pre-auth needed)
   const renderContent = () => {
     if (!authenticated) {
       return (
-        <div className="flex items-center justify-center">
+        <div className="flex items-center justify-center h-full">
           <p style={{ color: theme.text.secondary }}>Connect wallet to start trading</p>
         </div>
       );
     }
 
-    if (accountStatus.isChecking) {
-      return (
-        <div className="flex items-center justify-center">
-          <p style={{ color: theme.text.secondary }}>Checking account...</p>
-        </div>
-      );
-    }
-
-    if (accountStatus.error && !accountStatus.exists) {
-      return (
-        <div className="flex items-center justify-center">
-          <p style={{ color: theme.text.secondary }}>Error: {accountStatus.error}</p>
-        </div>
-      );
-    }
-
-    // Show normal trading interface if account exists
+    // Always show trading interface when wallet is connected
     return (
       <>
         <MarketDisplay />

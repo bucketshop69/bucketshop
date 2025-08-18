@@ -18,12 +18,17 @@ This is a Next.js 15 application using the App Router with TypeScript and Tailwi
 - **TypeScript** with strict configuration
 - **Tailwind CSS v4** for styling
 - **Lucide React** for icons
+- **Upstash Redis** for serverless market data caching
+- **SWR** for data fetching and real-time updates
 
 ### Project Structure
 - `src/app/` - Next.js App Router pages and layouts
 - `src/components/` - Reusable React components
+  - `src/components/core/` - Core UI components (TabNavigation, MarketList)
 - `src/features/` - Feature-based modules
 - `src/lib/` - Utilities and services
+  - `src/lib/drift/` - Drift Protocol API integration (modular architecture)
+  - `src/lib/redis.ts` - Redis client and helper functions
 - `src/types/` - TypeScript type definitions
 
 ### Path Aliases
@@ -251,6 +256,51 @@ Example: `feat: add Jest testing framework with TypeScript support`
 
 ## Drift Integration Architecture
 
+### Market Data Pipeline (Real-time)
+**Architecture**: Serverless Redis caching with background data updates for live market information.
+
+**Data Flow**:
+1. **Background Cron Job** (`/api/drift/cron/update-markets`):
+   - Runs every 60 seconds via Vercel Cron
+   - Fetches live data from Drift APIs (volume, open interest)
+   - Stores in Redis with 5-minute TTL for reliability
+   - Handles 65+ perpetual and spot markets
+
+2. **Client API** (`/api/drift/markets`):
+   - Fast Redis reads for instant market data serving
+   - Data validation and sorting by volume
+   - HTTP caching headers for optimal performance
+   - Auto-refresh endpoint for empty data states
+
+3. **Frontend Integration**:
+   - SWR for data fetching with 60-second refresh intervals
+   - Auto-refresh logic when markets are empty
+   - Real-time updates in MarketList component
+   - Loading states and error boundaries
+
+**Redis Schema**:
+```
+drift:market:{symbol}     - Individual market data
+drift:last_update        - Update timestamp
+drift:update_status       - Cron job status tracking
+```
+
+**Market Data Structure**:
+```typescript
+interface MarketData {
+  symbol: string;           // e.g., "ETH-PERP"
+  displayName: string;      // Market display name
+  price: number | null;     // Current price (to be implemented)
+  priceChange24h: number | null; // 24h change (to be implemented)
+  quoteVolume: number;      // 24h volume in quote currency
+  baseVolume: number;       // 24h volume in base currency
+  marketIndex: number;      // Drift market index
+  marketType: string;       // "perp" or "spot"
+  openInterest: number;     // Current open interest
+  lastUpdated: number;      // Timestamp
+}
+```
+
 ### Hybrid Transaction Flow (Server + Client)
 **Why this approach**: Drift SDK requires Node.js modules (fs, os, crypto) that cannot run in browser environment.
 
@@ -270,12 +320,16 @@ Example: `feat: add Jest testing framework with TypeScript support`
    - `/api/drift/check-account` - Account existence verification
    - `/api/drift/create-account` - Account creation transaction generation
    - `/api/drift/place-order` - Order placement transaction generation
+   - `/api/drift/markets` - Real-time market data serving
+   - `/api/drift/markets/refresh` - Manual market data refresh
+   - `/api/drift/cron/update-markets` - Background data updates
 
 **Key Benefits**:
 - Full Drift SDK functionality on server
 - Real wallet signing on client
 - No browser compatibility issues
 - Secure transaction flow
+- Real-time market data with Redis caching
 
 ## Memories and Guidelines
 

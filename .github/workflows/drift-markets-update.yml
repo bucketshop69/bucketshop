@@ -1,0 +1,22 @@
+name: Drift Markets Update
+
+on:
+  schedule:
+    - cron: "*/5 * * * *"   # every 5 minutes
+  workflow_dispatch:         # allows manual trigger from GitHub UI
+
+jobs:
+  update-markets:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Call Drift update endpoint
+        run: |
+          curl -X POST \
+            -H "Authorization: Bearer ${{ secrets.DRIFT_UPDATE_TOKEN }}" \
+            -H "Content-Type: application/json" \
+            https://bucketshop-yx78.vercel.app/api/drift/cron/update-markets
+        timeout-minutes: 2
+      
+      - name: Check update status
+        if: failure()
+        run: echo "Market update failed - check endpoint and credentials"

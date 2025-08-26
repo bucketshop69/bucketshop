@@ -1,12 +1,12 @@
 // Background job for updating market data from Drift API
-// This endpoint is called by Vercel Cron every 60 seconds
+// This endpoint is called by GitHub Actions every 5 minutes
 
 import { NextRequest, NextResponse } from 'next/server';
 import { redis, redisHelpers } from '@/lib/redis';
 import { driftApiService } from '@/lib/drift/api-service';
 import type { UpdateStatus } from '@/lib/redis';
 
-// Security: Only allow Vercel Cron to call this endpoint
+// Security: Only allow GitHub Actions to call this endpoint
 function validateCronRequest(request: NextRequest): boolean {
   const authHeader = request.headers.get('authorization');
   const expectedAuth = `Bearer ${process.env.CRON_SECRET}`;
@@ -138,7 +138,7 @@ export async function GET(request: NextRequest) {
       console.error('❌ Failed to update error status:', statusError);
     }
     
-    // Return error response (don't throw - let Vercel cron continue)
+    // Return error response (don't throw - let GitHub Actions continue)
     return NextResponse.json({
       success: false,
       error: errorMessage,

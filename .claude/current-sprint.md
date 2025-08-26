@@ -45,10 +45,10 @@
     - ✅ Implement Redis data retrieval with proper formatting
     - ✅ Add response caching and error handling
     - ✅ Include market data validation and fallbacks
-  - [x] Task 4.5: Vercel Cron Configuration **← COMPLETED**
-    - ✅ Set up `vercel.json` cron configuration for 60-second intervals
+  - [x] Task 4.5: GitHub Actions Cron Configuration **← COMPLETED**
+    - ✅ Set up GitHub Actions workflow for 5-minute intervals
     - ✅ Add authentication for cron endpoint security
-    - ✅ Test cron job execution and monitoring
+    - ✅ Remove Vercel cron configuration
 - [x] Task 5: Basic Market List with Volume Data (Frontend Specialist) **← COMPLETED**
   - **Branch**: `feature/market-discovery-interface`
   - ✅ Enhanced MarketList component with real Drift API data
@@ -72,7 +72,7 @@
 ## Backend Architecture & Implementation:
 **Primary Stack**:
 - **Upstash Redis**: Serverless Redis for market data caching
-- **Vercel Cron**: Background jobs for Drift API polling
+- **GitHub Actions**: Background jobs for Drift API polling
 - **Next.js API Routes**: RESTful endpoints for client data access
 
 **Data Flow Strategy**:
@@ -108,7 +108,7 @@
 Before testing/deploying this sprint, ensure:
 - [ ] **Upstash Redis Setup**: Create database at console.upstash.com
 - [ ] **Environment Variables**: Update `.env.local` with actual Upstash credentials
-- [ ] **Vercel Environment**: Add Redis credentials to Vercel dashboard
+- [x] **Vercel Environment**: Add Redis credentials to Vercel dashboard
 - [ ] **Cron Secret**: Generate secure random string for `CRON_SECRET`
 - [ ] **API Testing**: Test `/api/drift/markets` endpoint after Redis setup
 - [ ] **Background Job**: Verify `/api/drift/cron/update-markets` executes successfully

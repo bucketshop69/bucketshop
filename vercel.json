@@ -1,15 +1,4 @@
 {
-  "crons": [
-    {
-      "path": "/api/drift/cron/update-markets",
-      "schedule": "*/5 * * * *"
-    }
-  ],
-  "functions": {
-    "api/drift/cron/update-markets/route.js": {
-      "maxDuration": 30
-    }
-  },
   "headers": [
     {
       "source": "/api/drift/markets",

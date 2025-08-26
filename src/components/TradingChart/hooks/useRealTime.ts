@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef } from 'react';
 import { useChartStore, getTimeframeDuration } from '../data/chartStore';
-import { useMarketStore, selectSelectedSymbol } from '../data/marketStore';
+import { useDriftMarketsStore, selectSelectedSymbol } from '@/shared/store/drift/driftMarketsStore';
 import { WebSocketManager, WebSocketCallbacks } from '../data/WebSocketManager';
 
 /**
@@ -39,7 +39,7 @@ export function useRealTime() {
   } = useChartStore();
 
   // Get current market from market store
-  const selectedSymbol = useMarketStore(selectSelectedSymbol);
+  const selectedSymbol = useDriftMarketsStore(selectSelectedSymbol);
 
 
   // WebSocket manager instance (persisted across re-renders)

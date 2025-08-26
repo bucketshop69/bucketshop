@@ -9,9 +9,8 @@ import {
 } from '../data/chartStore';
 import { useChartData } from '../hooks/useChartData';
 import { useRealTime } from '../hooks/useRealTime';
-import { useMarketStore, selectSelectedSymbol, selectAvailableMarkets, useMarketInitialization } from '../data/marketStore';
+import { useDriftMarketSelection } from '@/shared/store/drift/driftMarketsStore';
 import { ChartOverlays } from './ChartOverlays';
-import { MarketDropdown } from './MarketDropdown';
 import { TimeframeSelector } from './TimeframeSelector';
 
 export interface ChartContainerProps {
@@ -58,9 +57,7 @@ export function ChartContainer({
   const { setTheme, clearError, setSymbol, setCandles } = useChartStore();
 
   // Market store state
-  const selectedSymbol = useMarketStore(selectSelectedSymbol);
-  const availableMarkets = useMarketStore(selectAvailableMarkets);
-  const { selectMarket } = useMarketStore();
+  const { selectedSymbol } = useDriftMarketSelection();
 
   // Chart data management
   const {
@@ -72,28 +69,6 @@ export function ChartContainer({
     reconnect,
   } = useRealTime();
 
-  // Initialize markets on mount
-  useMarketInitialization();
-
-  // Handle market switching
-  const handleMarketSwitch = (newSymbol: string) => {
-    if (newSymbol === selectedSymbol) return;
-
-    // Clear current chart data
-    setCandles([]);
-
-    // Reset chart state to trigger full reload
-    setIsInitialLoadComplete(false);
-
-    // Switch market in store (this will trigger all the reactive chains)
-    selectMarket(newSymbol);
-
-    // Reset loading state AFTER symbol sync to allow new data fetch
-    setTimeout(() => {
-      const { setLoadingState } = useChartStore.getState();
-      setLoadingState('idle');
-    }, 0);
-  };
 
   // Ensure client-side only rendering
   useEffect(() => {
@@ -275,18 +250,6 @@ export function ChartContainer({
       >
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-6">
-            {/* Market Selector Dropdown */}
-            <MarketDropdown
-              selectedSymbol={selectedSymbol}
-              availableMarkets={availableMarkets.map(market => ({
-                symbol: market.config.symbol,
-                displayName: market.displayName
-              }))}
-              isLoading={loadingState === 'loading'}
-              onMarketSelect={handleMarketSwitch}
-              theme={theme}
-            />
-
             {/* Timeframe Selector */}
             <TimeframeSelector />
 

@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import React from 'react';
 import useSWR from 'swr';
 import { theme } from '@/lib/theme';
 
@@ -48,11 +48,8 @@ export default function MarketList({
   selectedSymbol,
   onMarketSelect
 }: MarketListProps) {
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const [hasTriggeredRefresh, setHasTriggeredRefresh] = useState(false);
-
-  // Fetch market data from our API
-  const { data, error, isLoading, mutate } = useSWR<MarketsApiResponse>(
+  // Fetch market data from our API (backend handles auto-refresh internally)
+  const { data, error, isLoading } = useSWR<MarketsApiResponse>(
     '/api/drift/markets',
     fetcher,
     {
@@ -61,43 +58,13 @@ export default function MarketList({
     }
   );
 
-  // Auto-trigger backend refresh when markets are empty
-  useEffect(() => {
-    if (data?.success && data.markets.length === 0 && !isLoading && !hasTriggeredRefresh) {
-      setIsRefreshing(true);
-      setHasTriggeredRefresh(true);
-      
-      // Trigger server-side refresh
-      fetch('/api/drift/markets/refresh', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json'
-        }
-      })
-      .then(response => response.json())
-      .then(() => {
-        // Wait 2 seconds then refresh the data
-        setTimeout(() => {
-          mutate(); // Revalidate SWR data
-          setIsRefreshing(false);
-        }, 2000);
-      })
-      .catch(error => {
-        console.error('❌ Server refresh failed:', error);
-        setIsRefreshing(false);
-        // Reset flag so user can try again
-        setHasTriggeredRefresh(false);
-      });
-    }
-  }, [data, isLoading, hasTriggeredRefresh, mutate]);
-
-  if (isLoading || isRefreshing) {
+  if (isLoading) {
     return (
       <div className="w-full h-full flex flex-col">
         <div className="p-4 border-b" style={{ borderColor: theme.grid.primary }}>
           <div className="flex items-center gap-2">
             <span style={{ color: theme.text.secondary }}>
-              {isRefreshing ? 'Refreshing market data...' : 'Loading markets...'}
+              Loading markets...
             </span>
             <div
               className="w-4 h-4 border-2 border-current border-t-transparent rounded-full animate-spin"

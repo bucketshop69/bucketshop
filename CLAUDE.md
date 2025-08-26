@@ -261,7 +261,7 @@ Example: `feat: add Jest testing framework with TypeScript support`
 
 **Data Flow**:
 1. **Background Cron Job** (`/api/drift/cron/update-markets`):
-   - Runs every 60 seconds via Vercel Cron
+   - Runs every 5 minutes via GitHub Actions
    - Fetches live data from Drift APIs (volume, open interest)
    - Stores in Redis with 5-minute TTL for reliability
    - Handles 65+ perpetual and spot markets

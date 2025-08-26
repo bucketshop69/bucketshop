@@ -20,20 +20,124 @@ This is a Next.js 15 application using the App Router with TypeScript and Tailwi
 - **Lucide React** for icons
 - **Upstash Redis** for serverless market data caching
 - **SWR** for data fetching and real-time updates
+- **Zustand** for state management (global + DApp-specific stores)
 
-### Project Structure
-- `src/app/` - Next.js App Router pages and layouts
-- `src/components/` - Reusable React components
-  - `src/components/core/` - Core UI components (TabNavigation, MarketList)
-- `src/features/` - Feature-based modules
-- `src/lib/` - Utilities and services
-  - `src/lib/drift/` - Drift Protocol API integration (modular architecture)
-  - `src/lib/redis.ts` - Redis client and helper functions
-- `src/types/` - TypeScript type definitions
+### Project Structure (DApp-Centric Architecture)
+- `src/app/` - Next.js App Router with DApp-specific routing
+  - `src/app/(dapps)/` - Route group for DApp-specific pages
+    - `drift/markets/` → `/drift/markets` (market discovery)
+    - `drift/markets/[symbol]/` → `/drift/markets/btc-usd` (trading)
+    - `jupiter/markets/` → Jupiter market discovery
+    - `meteora/pools/` → Pool discovery and liquidity provision
+- `src/features/` - DApp-specific feature modules
+  - `src/features/drift/` - Drift Protocol complete implementation
+    - `components/` - Drift UI components (MarketList, TradingPanel, OrderForm)
+    - `services/` - Drift business logic and API integration
+    - `hooks/` - Drift-specific React hooks
+    - `store/` - Drift Zustand stores (markets, orders, trading)
+    - `types.ts` - Drift type definitions
+  - `src/features/jupiter/` - Jupiter DEX integration
+  - `src/features/meteora/` - Meteora DLMM integration
+- `src/shared/` - Cross-DApp shared resources
+  - `components/Chart/` - Universal chart component for all DApps
+  - `components/ui/` - Basic UI components (buttons, inputs)
+  - `components/layout/` - Common layouts and navigation
+  - `services/` - Shared services (Redis, wallet, theme)
+  - `hooks/` - Common React hooks
+  - `store/` - Global Zustand stores (wallet, chart, navigation, ui)
+- `src/lib/` - Configuration and setup utilities
 
 ### Path Aliases
 - `@/*` maps to `./src/*`
 - Configured in both tsconfig.json and components.json
+
+## DApp-Centric Architecture
+
+### Core Design Philosophy
+
+**Layout Pattern**: 70% Chart Area + 30% Action Panel
+- **Chart Area**: Universal analytics/price data for selected asset
+- **Action Panel**: DApp-specific discovery and trading interfaces
+- **URL-Driven State**: Routes determine chart data and action panel content
+
+### URL Structure & Navigation
+
+**Pattern**: `/dapp-name/feature/[asset]`
+
+```
+/drift/markets              → Drift market discovery
+/drift/markets/btc-usd      → BTC-USD trading on Drift
+/jupiter/markets            → Jupiter token discovery  
+/jupiter/markets/sol-usdc   → SOL→USDC swap interface
+/meteora/pools              → Pool discovery
+/meteora/pools/[pool-id]    → Liquidity provision interface
+/kamino/vaults              → Vault discovery (future)
+```
+
+### State Management with Zustand
+
+**Multi-Level State Architecture**:
+
+```typescript
+// Global Stores (shared/store/)
+├── chartStore          # Chart data, timeframes, selected asset
+├── walletStore         # Wallet connection, user authentication  
+├── navigationStore     # Current DApp, route context
+└── uiStore            # Theme, layout preferences
+
+// DApp-Specific Stores (features/[dapp]/store/)
+├── drift/
+│   ├── marketsStore    # Drift markets data, selection
+│   ├── ordersStore     # Open orders, positions
+│   └── tradingStore    # Order form state, trade execution
+├── jupiter/
+│   ├── routesStore     # Swap routes, price impact
+│   └── tokensStore     # Token lists, balances
+└── meteora/
+    ├── poolsStore      # Pool data, APY, volume
+    └── positionsStore  # LP positions, rewards
+```
+
+**State Communication Flow**:
+1. **URL Change** → `navigationStore` updates current DApp context
+2. **Navigation Store** → Triggers chart data update for selected asset  
+3. **Chart Store** → Loads appropriate data (price, volume, pool metrics)
+4. **DApp Store** → Loads DApp-specific data (markets, pools, routes)
+
+### DApp Integration Pattern
+
+**Each DApp follows standardized structure**:
+
+```
+features/[dapp-name]/
+├── components/           # DApp-specific UI components
+│   ├── MarketList.tsx   # Asset discovery interface
+│   ├── TradingPanel.tsx # Action interface (trade/swap/deposit)
+│   └── OrderForm.tsx    # Transaction forms
+├── services/            # Business logic and API integration
+│   ├── api.ts          # External API calls
+│   ├── orders.ts       # Transaction management
+│   └── utils.ts        # DApp-specific utilities
+├── hooks/              # React hooks for DApp functionality
+│   ├── useMarkets.ts   # Market data management
+│   └── useTrading.ts   # Trading state management
+├── store/              # Zustand stores for DApp state
+│   ├── markets.store.ts
+│   └── trading.store.ts
+├── types.ts            # TypeScript definitions
+└── server/             # Server-side logic (API routes)
+    ├── services/       # Server-side business logic
+    └── api-handlers/   # API route handlers
+```
+
+### Scalability Benefits
+
+✅ **Clean Separation**: Each DApp is completely self-contained  
+✅ **Easy Expansion**: Add new DApps by creating `features/[new-dapp]/`  
+✅ **Shared Resources**: Chart component and utilities available to all DApps  
+✅ **URL-Friendly**: Deep linking to specific markets/pools/vaults  
+✅ **Team-Friendly**: Each developer can own a complete DApp feature  
+✅ **Route-Based Loading**: Only load code for active DApp
 
 ## Project Memory Structure
 

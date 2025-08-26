@@ -2,11 +2,11 @@
   "crons": [
     {
       "path": "/api/drift/cron/update-markets",
-      "schedule": "0 * * * * *"
+      "schedule": "*/5 * * * *"
     }
   ],
   "functions": {
-    "src/app/api/drift/cron/update-markets/route.ts": {
+    "api/drift/cron/update-markets/route.js": {
       "maxDuration": 30
     }
   },

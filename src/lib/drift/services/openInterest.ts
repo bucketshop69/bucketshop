@@ -18,26 +18,37 @@ export async function getOpenInterest(marketName: string, hoursBack: number = 1)
     marketName,
     start: start.toString(),
     end: end.toString(),
-    samples: '1' // Just get the latest value
+    samples: '100' // Get more samples for reliable data
   });
   
   const url = `${endpoint}?${params}`;
   
   return withRetry(async () => {
     console.log(`📈 Fetching OI data for ${marketName}...`);
+    console.log(`🔗 Full URL: ${url}`);
     
     const response = await fetchWithTimeout(url);
     const data = await response.json();
     
-    // Validate response structure
-    if (!Array.isArray(data) || data.length === 0) {
+    console.log(`📊 Raw OI response for ${marketName}:`, JSON.stringify(data, null, 2));
+    
+    // Validate response structure - Drift API returns { success: true, data: [[timestamp, "value"], ...] }
+    if (!data.success || !Array.isArray(data.data) || data.data.length === 0) {
       console.warn(`⚠️ No OI data found for ${marketName}`);
       return 0;
     }
     
-    // Get the most recent open interest value
-    const latestOI = data[data.length - 1] as DriftOpenInterestResponse;
-    const validatedOI = validateOpenInterestValue(latestOI.openInterest, marketName);
+    // Get the most recent open interest value - data is array of [timestamp, openInterest_string]
+    const latestEntry = data.data[data.data.length - 1];
+    if (!Array.isArray(latestEntry) || latestEntry.length < 2) {
+      console.warn(`⚠️ Invalid OI data format for ${marketName}`);
+      return 0;
+    }
+    
+    // Parse the open interest value from string to number
+    const openInterestString = latestEntry[1];
+    const openInterestValue = parseFloat(openInterestString) || 0;
+    const validatedOI = validateOpenInterestValue(openInterestValue, marketName);
     
     console.log(`✅ OI for ${marketName}: ${validatedOI}`);
     return validatedOI;

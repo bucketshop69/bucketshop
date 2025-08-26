@@ -1,10 +1,10 @@
 // Development endpoint to clear market data for testing auto-refresh
 // Only available in development
 
-import { NextRequest, NextResponse } from 'next/server';
+import { NextResponse } from 'next/server';
 import { redisHelpers } from '@/lib/redis';
 
-export async function POST(request: NextRequest) {
+async function clearMarketData() {
   // Only allow in development
   if (process.env.NODE_ENV === 'production') {
     return NextResponse.json(
@@ -37,4 +37,12 @@ export async function POST(request: NextRequest) {
       status: 500 
     });
   }
+}
+
+export async function POST() {
+  return clearMarketData();
+}
+
+export async function GET() {
+  return clearMarketData();
 }

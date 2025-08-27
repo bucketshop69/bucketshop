@@ -4,9 +4,6 @@ import { usePathname, useRouter } from 'next/navigation';
 import { theme } from '@/lib/theme';
 import { useDriftMarketsStore, selectSelectedSymbol } from '@/shared/store/drift/driftMarketsStore';
 
-const DRIFT_TABS = [
-    { id: 'markets', name: 'Markets', path: '/drift/markets' },
-];
 
 export default function DriftTabNavigation() {
     const pathname = usePathname();

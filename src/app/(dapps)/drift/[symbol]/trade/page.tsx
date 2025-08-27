@@ -4,10 +4,10 @@ import { useState, useEffect } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useSolanaWallets } from '@privy-io/react-auth/solana';
 import { theme } from '@/lib/theme';
-import { CreateAccountModal } from '@/components/CreateAccountModal';
 import { DriftApiService, AccountStatus } from '@/lib/drift/DriftApiService';
 import { useDriftMarketsStore, selectSelectedSymbol } from '@/shared/store/drift/driftMarketsStore';
 import { useChartStore, selectCurrentPrice, selectMetrics } from '@/components/TradingChart/data/chartStore';
+import { CreateAccountModal } from '@/shared/components/drift/CreateAccountModal';
 
 function MarketDisplay() {
     // Get real market data from stores

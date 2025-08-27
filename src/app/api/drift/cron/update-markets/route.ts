@@ -152,7 +152,7 @@ export async function GET(request: NextRequest) {
 }
 
 // Health check endpoint for monitoring
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // Check Redis connectivity
     const redisHealthy = await redisHelpers.healthCheck();

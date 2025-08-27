@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DriftServerService } from '@/lib/server/DriftServerService';
+import { DriftTransactionService } from '@/lib/drift/DriftTransactionService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -38,7 +38,7 @@ export async function POST(request: NextRequest) {
     };
 
     // Create deposit transaction
-    const driftService = new DriftServerService();
+    const driftService = new DriftTransactionService();
     const connected = await driftService.connect(serverWallet as any);
     
     if (!connected) {

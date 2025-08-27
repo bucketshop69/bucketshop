@@ -1,9 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PublicKey } from '@solana/web3.js';
-import { DriftServerService } from '@/lib/server/DriftServerService';
+import { DriftTransactionService } from '@/lib/drift/DriftTransactionService';
 
 export async function POST(request: NextRequest) {
-  let driftService: DriftServerService | null = null;
+  let driftService: DriftTransactionService | null = null;
   
   try {
     const { walletAddress } = await request.json();
@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       signAllTransactions: async () => { throw new Error('Server-side wallet - signing not supported'); },
     };
 
-    driftService = new DriftServerService();
+    driftService = new DriftTransactionService();
     const connected = await driftService.connect(serverWallet as any);
 
     if (!connected) {

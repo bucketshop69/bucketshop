@@ -5,12 +5,12 @@ import { usePrivy } from '@privy-io/react-auth';
 import { useSolanaWallets } from '@privy-io/react-auth/solana';
 import { TradingChart } from '@/components/TradingChart';
 import { WalletButton } from '@/components/WalletButton';
-import { DepositModal } from '@/components/DepositModal';
 import { useDriftMarketSelection } from '@/shared/store/drift/driftMarketsStore';
 import { DriftApiService } from '@/lib/drift/DriftApiService';
 import { theme } from '@/lib/theme';
 import DAppNavigation from '@/shared/components/navigation/DAppNavigation';
 import DriftTabNavigation from '@/shared/components/navigation/DriftTabNavigation';
+import { DepositModal } from '@/shared/components/drift/DepositModal';
 
 export default function DAppLayout({
     children,

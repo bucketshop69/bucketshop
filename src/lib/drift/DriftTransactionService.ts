@@ -1,5 +1,5 @@
-import { Connection, Transaction, TransactionInstruction, VersionedTransaction } from '@solana/web3.js';
-import { DriftClient, initialize, Wallet, OrderType, PositionDirection, OptionalOrderParams, BN, PerpPosition, UserAccount } from '@drift-labs/sdk';
+import { Connection, Transaction } from '@solana/web3.js';
+import { DriftClient, initialize, Wallet, OrderType, PositionDirection, OptionalOrderParams, BN, UserAccount } from '@drift-labs/sdk';
 
 interface DriftTradingConfig {
   rpcUrl: string;
@@ -48,7 +48,7 @@ export interface EnhancedPerpPosition {
   marketSymbol: string;
 }
 
-export class DriftServerService {
+export class DriftTransactionService {
   private config: DriftTradingConfig;
   private connection: Connection;
   private driftClient: DriftClient | null = null;
@@ -79,7 +79,7 @@ export class DriftServerService {
 
       return true;
     } catch (error) {
-      console.error('Failed to connect DriftServerService:', error);
+      console.error('Failed to connect DriftTransactionService:', error);
       return false;
     }
   }

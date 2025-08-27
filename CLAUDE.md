@@ -45,7 +45,14 @@ This is a Next.js 15 application using the App Router with TypeScript and Tailwi
   - `services/` - Shared services (Redis, wallet, theme)
   - `hooks/` - Common React hooks
   - `store/` - Global Zustand stores (wallet, chart, navigation, ui)
-- `src/lib/` - Configuration and setup utilities
+- `src/lib/` - Configuration and server-side utilities
+  - `src/lib/drift/` - Drift Protocol server-side services and utilities
+    - `DriftTransactionService.ts` - Server-side SDK + transaction generation
+    - `DriftApiService.ts` - Client-side transaction wrapper
+    - `api-service.ts` - Market data API service
+    - `core/` - Core utilities (client, errors, types)
+    - `services/` - Modular API services (markets, volume, openInterest)
+    - `utils/` - Helper functions (formatting, validation)
 
 ### Path Aliases
 - `@/*` maps to `./src/*`
@@ -358,6 +365,33 @@ Follow conventional commits for better tracking:
 
 Example: `feat: add Jest testing framework with TypeScript support`
 
+## Server-Side Architecture Standards
+
+### Server Logic Location Strategy
+**Decision**: All server-side logic remains in `src/lib/` directory, following Node.js/Next.js conventions.
+
+**Rationale**:
+- **`src/lib/`** - Server-side services, utilities, and configuration
+- **`src/features/[dapp]/`** - Client-side components, hooks, and stores only
+- **Clear Separation**: Server logic isolated from client-side feature modules
+- **Consistency**: Follows Next.js App Router patterns and Node.js conventions
+
+**Examples**:
+```
+src/lib/drift/                    # ✅ Server-side Drift services
+├── DriftTransactionService.ts    # Server SDK integration
+├── DriftApiService.ts            # Client API wrapper
+├── api-service.ts               # Market data service
+└── core/services/utils/         # Supporting utilities
+
+src/features/drift/              # ✅ Client-side only
+├── components/                  # React components
+├── hooks/                      # React hooks
+└── store/                      # Zustand stores
+```
+
+This ensures clean separation between server-side business logic and client-side presentation logic.
+
 ## Drift Integration Architecture
 
 ### Market Data Pipeline (Real-time)
@@ -410,7 +444,7 @@ interface MarketData {
 
 **Solution**: Server creates unsigned transactions, client signs with real wallet:
 
-1. **Server Side** (`/src/lib/server/DriftServerService.ts`):
+1. **Server Side** (`/src/lib/drift/DriftTransactionService.ts`):
    - Uses full Drift SDK with Node.js environment
    - Creates unsigned transactions for account creation and order placement
    - Returns serialized transaction to client via API routes

@@ -6,7 +6,7 @@ export interface AccountStatus {
 }
 
 // Import the enhanced type from server service
-import type { EnhancedPerpPosition } from '@/lib/server/DriftServerService';
+import type { EnhancedPerpPosition } from '@/lib/drift/DriftTransactionService';
 export type { EnhancedPerpPosition };
 
 // Utility function to get RPC connection

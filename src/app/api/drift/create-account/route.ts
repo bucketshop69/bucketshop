@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { PublicKey } from '@solana/web3.js';
-import { DriftServerService } from '@/lib/server/DriftServerService';
+import { DriftTransactionService } from '@/lib/drift/DriftTransactionService';
 
 export async function POST(request: NextRequest) {
   try {
@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
     };
 
 
-    const driftService = new DriftServerService();
+    const driftService = new DriftTransactionService();
     const connected = await driftService.connect(walletForTxCreation as any);
     
 

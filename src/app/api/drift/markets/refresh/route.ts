@@ -1,10 +1,10 @@
 // Server-side market refresh endpoint
 // This triggers a manual backend update when markets are empty
 
-import { NextRequest, NextResponse } from 'next/server';
-import { redis, redisHelpers } from '@/lib/redis';
+import { NextResponse } from 'next/server';
+import { redisHelpers } from '@/lib/redis';
 
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // Check current market count
     const currentMarkets = await redisHelpers.getAllMarketData();

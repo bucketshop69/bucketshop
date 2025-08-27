@@ -1,8 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
-import { DriftServerService } from '@/lib/server/DriftServerService';
+import { DriftTransactionService } from '@/lib/drift/DriftTransactionService';
 
 export async function POST(request: NextRequest) {
-  let driftService: DriftServerService | null = null;
+  let driftService: DriftTransactionService | null = null;
   
   try {
     const body = await request.json();
@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Create order transaction
-    driftService = new DriftServerService();
+    driftService = new DriftTransactionService();
     
     // Create a server-side wallet for transaction creation (same pattern as check-account)
     const { PublicKey } = await import('@solana/web3.js');

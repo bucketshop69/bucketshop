@@ -4,7 +4,7 @@ import { useState } from 'react';
 import { usePrivy } from '@privy-io/react-auth';
 import { useSolanaWallets } from '@privy-io/react-auth/solana';
 import { TradingChart } from '@/components/TradingChart';
-import { WalletButton } from '@/components/WalletButton';
+import { WalletButton } from '@/shared/components/WalletButton';
 import { useDriftMarketSelection } from '@/shared/store/drift/driftMarketsStore';
 import { DriftApiService } from '@/lib/drift/DriftApiService';
 import { theme } from '@/lib/theme';
